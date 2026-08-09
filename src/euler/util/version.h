@@ -79,6 +79,10 @@ public:
 		return std::format("v{}.{}.{}", _major, _minor, _patch);
 	}
 
+#ifdef EULER_NATIVE
+	uint32_t to_vulkan() const;
+#endif
+
 private:
 	uint16_t _major : 10;
 	uint16_t _minor : 10;

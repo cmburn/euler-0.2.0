@@ -11,10 +11,11 @@ using euler::app::native::Logger;
 using Severity = Logger::Severity;
 
 enum class Color {
-	None,
+	None [[maybe_unused]],
 	Black [[maybe_unused]],
 	Red,
 	Green,
+
 	Yellow,
 	Blue [[maybe_unused]],
 	Magenta,
@@ -39,12 +40,12 @@ static constexpr ColorList SEVERITY_COLORS = {
 };
 
 static constexpr ColorList MESSAGE_COLORS = {
-	/* [Severity::Debug]   = */ Color::None,
-	/* [Severity::Info]    = */ Color::Cyan,
+	/* [Severity::Debug]   = */ Color::Cyan,
+	/* [Severity::Info]    = */ Color::White,
 	/* [Severity::Warn]    = */ Color::Yellow,
 	/* [Severity::Error]   = */ Color::Red,
 	/* [Severity::Fatal]   = */ Color::Red,
-	/* [Severity::Unknown] = */ Color::Cyan,
+	/* [Severity::Unknown] = */ Color::White,
 };
 
 static constexpr std::array<std::string_view, COLOR_COUNT> COLORS = {
@@ -73,136 +74,78 @@ color_for(Color color)
 	return COLORS.at(static_cast<size_t>(color));
 }
 
-static Severity
-coerce_severity(enum_t level)
+std::string_view
+Logger::severity_name(Severity level)
 {
-	switch (static_cast<Severity>(level)) {
-	case Severity::Debug: return Severity::Debug;
-	case Severity::Info: return Severity::Info;
-	case Severity::Warn: return Severity::Warn;
-	case Severity::Error: return Severity::Error;
-	case Severity::Fatal: return Severity::Fatal;
-	default: return Severity::Unknown;
-	}
+	const auto idx = static_cast<size_t>(level);
+	return SEVERITY_NAMES.at(idx);
 }
 
-static constexpr const char *
-severity_to_str(const Logger::Severity level)
+void
+Logger::Sink::push(const Severity sev, const std::string_view msg)
 {
-	switch (level) {
-	case Severity::Debug: return "debug";
-	case Severity::Info: return "info";
-	case Severity::Warn: return "warn";
-	case Severity::Error: return "error";
-	case Severity::Fatal: return "fatal";
-	default: return "unknown";
-	}
+	std::lock_guard lock(mutex);
+	queue.emplace_back(std::make_pair(sev, std::string(msg)));
+	cv.notify_one();
 }
 
-static FILE *
-output_stream(const Logger::Severity level)
+void
+Logger::Sink::flush_all()
 {
-	switch (level) {
-	case Severity::Warn:
-	case Severity::Error: [[fallthrough]];
-	case Severity::Fatal: return stderr;
-	default: return stdout;
-	}
-}
-
-Logger::Sink::Sink(FILE *output, Severity level)
-    : _min_level(level)
-    , _output(output)
-{
-	assert(output != nullptr);
-	assert(output != stdout && "Use Logger::stdout_sink() instead");
-	assert(output != stderr && "Use Logger::stderr_sink() instead");
-}
-
-Logger::Sink::Sink(const std::filesystem::path &path, Severity level)
-    : Sink(std::fopen(path.string().c_str(), "a"), level)
-{
-	if (_output == nullptr) {
-		throw std::runtime_error("Failed to open log file: "
-		    + path.string() + ": " + std::strerror(errno));
-	}
-	_own_file = true;
-}
-
-Logger::Sink::~Sink()
-{
-	if (_own_file) fclose(_output);
+	std::unique_lock lock(mutex);
+	cv.wait(lock, [this]() { return !queue.empty(); });
+	while (!queue.empty()) flush();
 }
 void
-Logger::Sink::write_to(Severity severity, const std::string &msg) const
+Logger::Sink::flush()
 {
-	if (severity < _min_level) return;
-	std::lock_guard lock(_mutex);
-	fprintf(_output, "%s\n", msg.c_str());
-	fflush(_output);
+	const auto [sev, msg] = queue.front();
+	queue.pop_front();
+	if (sev < severity) return;
+	fprintf(this->output, "%s", msg.c_str());
+	fflush(this->output);
 }
 
-Logger::Sink::Sink(FILE *output, Severity level, PrivateStruct) { }
+void
+Logger::Sink::launch_thread()
+{
+	std::thread([this]() {
+		/* ReSharper disable once CppDFAEndlessLoop */
+		while (true) flush_all();
+	}).detach();
+}
+
+Logger::Sink::Sink(FILE *output, const Severity severity)
+{
+	this->output = output;
+	this->severity = severity;
+}
 
 std::shared_ptr<Logger::Sink>
 Logger::stdout_sink()
 {
-	static std::weak_ptr<Sink> instance;
-	static std::mutex instance_mutex;
-	std::lock_guard lock(instance_mutex);
-	std::shared_ptr<Sink> shared = nullptr;
-	if (!instance.expired()) {
-		shared = instance.lock();
-		if (shared != nullptr) return shared;
-	}
-	Sink *sink = nullptr;
-	try {
-		/* ReSharper disable CppDFAMemoryLeak */
-		sink
-		    = new Sink(stdout, Severity::Debug, Sink::PrivateStruct {});
-		shared = std::shared_ptr<Sink>(sink);
-		instance = shared;
-		return shared;
-		/* ReSharper enable CppDFAMemoryLeak */
-		/* ReSharper disable once CppDFAUnreachableCode */
-	} catch (...) {
-		delete sink;
-		throw;
-	}
+	static auto sink = std::make_shared<Sink>(stdout, Severity::Info);
+	return sink;
 }
 
 std::shared_ptr<Logger::Sink>
 Logger::stderr_sink()
 {
-	static std::weak_ptr<Sink> instance;
-	static std::mutex instance_mutex;
-	std::lock_guard lock(instance_mutex);
-	std::shared_ptr<Sink> shared = nullptr;
-	if (!instance.expired()) {
-		shared = instance.lock();
-		if (shared != nullptr) return shared;
-	}
-	Sink *sink = nullptr;
-	try {
-		/* ReSharper disable once CppDFAMemoryLeak */
-		sink = new Sink(stderr, Severity::Warn, Sink::PrivateStruct {});
-		shared = std::shared_ptr<Sink>(sink);
-		instance = shared;
-		/* ReSharper disable once CppDFAMemoryLeak */
-		return shared;
-		/* ReSharper disable once CppDFAUnreachableCode */
-	} catch (...) {
-		delete sink;
-		throw;
-	}
+	static auto sink = std::make_shared<Sink>(stderr, Severity::Warn);
+	return sink;
 }
 
-std::string_view
-Logger::severity_name(Severity level)
+Logger::Logger(const std::string_view progname,
+    const std::string_view subsystem, const Severity severity)
+    : _progname(progname)
+    , _subsystem(subsystem)
+    , _severity(severity)
+    , _sinks({ stdout_sink(), stderr_sink() })
 {
+	for (const auto &sink : _sinks) sink->launch_thread();
 }
 
-const std::string &
+std::string
 Logger::subsystem() const
 {
 	std::lock_guard lock(_subsystem_mutex);
@@ -210,7 +153,7 @@ Logger::subsystem() const
 }
 
 void
-Logger::set_subsystem(std::string_view name)
+Logger::set_subsystem(const std::string_view name)
 {
 	std::lock_guard lock(_subsystem_mutex);
 	_subsystem = name;
@@ -223,32 +166,57 @@ Logger::severity() const
 }
 
 void
-Logger::set_severity(Severity level)
+Logger::set_severity(const Severity level)
 {
 	_severity = level;
 }
 
 euler::util::Reference<euler::util::Logger>
-Logger::copy(std::optional<std::string_view> subsystem) const
+Logger::copy(const std::optional<std::string_view> subsystem) const
 {
+	return util::Reference(new Logger(*this, subsystem));
 }
 
+Logger::~Logger() { info("Closing logger for {}", subsystem()); }
+
 void
-Logger::write_log(Severity level, const std::string &message) const
+Logger::write_log(const Severity level, const std::string &message) const
 {
-	static constexpr const char *ANSI_RESET_COLOR = "\033[0m";
-	const char *color = nullptr;
-	switch (level) {
-	case Severity::Debug: color = "\033[36m"; break; /* cyan */
-	case Severity::Info: color = "\033[32m"; break;  /* green */
-	case Severity::Warn: color = "\033[33m"; break;  /* yellow */
-	case Severity::Error: color = "\033[31m"; break; /* red */
-	case Severity::Fatal: color = "\033[41m"; break; /* red bg */
-	default: color = ANSI_RESET_COLOR; break;        /* reset */
+	if (level < _severity) return;
+	std::lock_guard lock(_sinks_mutex);
+	for (const auto &sink : _sinks) {
+		sink->push(level, format_message(level, message));
 	}
-	const auto out = output_stream(level);
-	fprintf(out, "%s[%s] %s: %s%s\n", color, subsystem().c_str(),
-	    severity_to_str(level), message.c_str(), ANSI_RESET_COLOR);
+}
+
+Logger::Logger(const Logger &other,
+    const std::optional<std::string_view> &subsystem)
+{
+	{
+		std::lock_guard lock(other._progname_mutex);
+		_progname = other._progname;
+	}
+	{
+		std::lock_guard lock(other._subsystem_mutex);
+		_subsystem = subsystem.value_or(other._subsystem);
+	}
+	{
+		const Severity level = other._severity;
+		_severity = level;
+	}
+}
+
+std::string
+Logger::progname() const
+{
+	std::lock_guard lock(_progname_mutex);
+	return _progname;
+}
+void
+Logger::set_progname(const std::string_view name)
+{
+	std::lock_guard lock(_progname_mutex);
+	_progname = name;
 }
 
 /* ReSharper disable once CppDFAUnreachableFunctionCall */
@@ -304,28 +272,25 @@ write_time(std::stringstream &ss)
 std::string
 Logger::format_message(Severity level, const std::string &message) const
 {
-	const auto message_color = this->message_color(level);
-	const auto severity_color = this->severity_color(level);
+	static constexpr size_t MAX_SEVERITY_LENGTH = 5;
+	static constexpr auto CLEAR = "\033[0m";
+	const auto index = static_cast<size_t>(level);
+	const auto message_color = color_for(MESSAGE_COLORS.at(index));
+	const auto severity_color = color_for(SEVERITY_COLORS.at(index));
 	std::stringstream ss;
-
-	ss << color_for(message_color) << "[" << color_for(severity_color);
+	ss << message_color << "[" << CLEAR << severity_color;
 	write_time(ss);
+	ss << CLEAR << message_color << "] ";
 	const auto sev_str = severity_name(level);
-	ss << color_for(message_color) << "] " << color_for(severity_color);
 	const auto padding = MAX_SEVERITY_LENGTH - sev_str.size();
 	for (size_t i = 0; i < padding; i++) ss << ' ';
-	ss << color_for(message_color) << "[" << color_for(severity_color)
-	   << sev_str << color_for(message_color) << "]";
+	ss << message_color << "[" << severity_color << sev_str << CLEAR
+	   << message_color << "]";
 	{
-		std::lock_guard lock(_progname_mutex);
-		ss << " [" << color_for(severity_color) << _progname
-		   << color_for(message_color) << "::";
+		std::lock_guard lock1(_progname_mutex), lock2(_subsystem_mutex);
+		ss << " [" << CLEAR << severity_color << _progname
+		   << "::" << _subsystem << CLEAR << message_color << "] -- ";
 	}
-	{
-		std::lock_guard lock(_subsystem_mutex);
-		ss << color_for(severity_color) << _subsystem;
-	}
-	ss << color_for(message_color) << "] -- " << color_for(message_color)
-	   << message << std::endl;
+	ss << message << std::endl;
 	return ss.str();
 }

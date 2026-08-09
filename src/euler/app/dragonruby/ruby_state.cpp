@@ -469,7 +469,7 @@ check_exit:
 					} else {
 						mrb_value args
 						    = ary_new_from_values(*pl,
-							argv + i);
+						        argv + i);
 						RARRAY(args)->c = nullptr;
 						*var = RARRAY_PTR(args);
 					}
@@ -510,7 +510,7 @@ check_exit:
 					mrb_value k = symbol_value(*kname);
 					if (!hash_key_p(ksrc, k)) {
 						raisef(state->mrb()
-							   ->argument_error(),
+						           ->argument_error(),
 						    "missing keyword: %n",
 						    *kname);
 					}
@@ -2783,7 +2783,7 @@ RubyState::error_type_info(RObject *exc)
 		throw std::invalid_argument("Not an exception");
 	if (_api.mrb_obj_is_kind_of(_mrb, value, script_error())) {
 		if (_api.mrb_obj_is_kind_of(_mrb, value,
-			not_implemented_error())) {
+		        not_implemented_error())) {
 			return {
 				.kind = Error::Kind::NotImplemented,
 				.is_custom = !_api.mrb_obj_is_instance_of(_mrb,

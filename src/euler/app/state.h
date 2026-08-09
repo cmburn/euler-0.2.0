@@ -3,11 +3,8 @@
 #ifndef EULER_APP_STATE_H
 #define EULER_APP_STATE_H
 
+#include "euler/util/ext.h"
 #include "euler/util/object.h"
-
-#ifdef EULER_PHYSICS
-#include "euler/physics/world.h"
-#endif
 
 #if defined(EULER_DRAGONRUBY)
 #include "euler/app/dragonruby/state.h"
@@ -25,10 +22,10 @@ class State final : public EULER_APP_NAMESPACE::State {
 
 public:
 	~State() override;
-	explicit State(const Arguments &args);
+	State();
 	[[nodiscard]] nthread_t available_threads() const override;
 	[[nodiscard]] mrb_value gv_state() const override;
-	bool initialize() override;
+	bool initialize(const util::Config &config) override;
 	[[nodiscard]] tick_t last_tick() const override;
 	[[nodiscard]] float fps() const override;
 	[[nodiscard]] tick_t total_ticks() const override;
@@ -52,6 +49,9 @@ public:
 	void set_phase(Phase phase) override;
 	mrb_value self_value() const override;
 
+	util::Version app_version() const override;
+	util::Version engine_version() const override;
+
 protected:
 	[[nodiscard]] const mrb_data_type *
 	data_type() const override
@@ -62,10 +62,6 @@ protected:
 private:
 	void initialize_self();
 
-private:
-#ifdef EULER_PHYSICS
-	util::Reference<physics::World> _world;
-#endif
 	bool _initialized_self = false;
 	Phase _phase = Phase::Update;
 	float _fps = 0;
@@ -78,6 +74,7 @@ private:
 	tick_t _last_frame_total_ticks = 0;
 	Modules _modules = {};
 	mrb_value _self_value = mrb_nil_value();
+	util::Version _app_version;
 };
 
 } /* namespace euler::app */

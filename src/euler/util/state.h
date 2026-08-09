@@ -16,19 +16,20 @@ class Context;
 
 #ifdef EULER_GRAPHICS
 namespace euler::graphics {
-class Target;
+class Image;
+class ImageLoader;
+class RenderTarget;
+class Color;
+class Window;
 }
 #endif
 
 namespace euler::util {
-class ImageLoader;
 class Error;
 class Logger;
 class Storage;
-class Image;
-class Color;
-class Window;
-class Font;
+class Version;
+struct Config;
 
 class State : public Object {
 public:
@@ -63,18 +64,11 @@ public:
 #ifdef EULER_GRAPHICS
 		struct {
 			RClass *mod = nullptr;
-			RClass *target = nullptr;
-			RClass *animated_sprite = nullptr;
-			RClass *basic_sprite = nullptr;
-			RClass *camera = nullptr;
-			RClass *color = nullptr;
-			RClass *composite_sprite = nullptr;
+			RClass *render_target = nullptr;
 			RClass *font = nullptr;
 			RClass *image = nullptr;
-			RClass *polygon = nullptr;
-			RClass *sprite = nullptr;
-			RClass *text = nullptr;
 			RClass *window = nullptr;
+			RClass *color = nullptr;
 		} graphics;
 #endif
 
@@ -94,6 +88,7 @@ public:
 			RClass *slider = nullptr;
 			RClass *style = nullptr;
 			RClass *text = nullptr;
+			RClass *user_interface = nullptr;
 			RClass *widget = nullptr;
 			RClass *window = nullptr;
 		} gui;
@@ -191,15 +186,22 @@ public:
 			RClass *color = nullptr;
 			RClass *version = nullptr;
 			RClass *logger = nullptr;
+			RClass *file = nullptr;
+			RClass *storage = nullptr;
 		} util;
 	};
 
 #ifdef EULER_GUI
 	[[nodiscard]] virtual Reference<gui::Context> gui() const = 0;
 #endif
+
 #ifdef EULER_GRAPHICS
-	[[nodiscard]] virtual Reference<graphics::Target> renderer() const
+	[[nodiscard]] virtual Reference<graphics::ImageLoader> image_loader()
 	    = 0;
+#endif
+
+#ifdef EULER_NATIVE
+	[[nodiscard]] virtual std::optional<uint32_t> preferred_gpu() const = 0;
 #endif
 
 	[[nodiscard]] virtual Runtime runtime() const = 0;
@@ -214,19 +216,14 @@ public:
 	[[nodiscard]] virtual tick_t total_ticks() const = 0;
 	[[nodiscard]] virtual mrb_value gv_state() const = 0;
 	[[nodiscard]] static Reference<State> get(const mrb_state *mrb);
-	[[nodiscard]] virtual Reference<ImageLoader> image_loader() = 0;
-
-	[[nodiscard]] virtual Reference<Window> window() = 0;
 
 	[[nodiscard]] virtual Phase phase() const = 0;
 	virtual void set_phase(Phase phase) = 0;
 	[[nodiscard]] virtual const std::string &progname() const = 0;
 	[[nodiscard]] virtual const std::string &title() const = 0;
-	virtual void upload_image(const char *label,
-	    const Reference<Image> &img)
-	    = 0;
-	virtual bool preinit() = 0;
-	virtual bool initialize() = 0;
+	// virtual bool preinit() = 0;
+	// virtual bool initialize(int argc, const char **argv) = 0;
+	virtual bool initialize(const Config &config) = 0;
 	virtual void tick() = 0;
 	virtual mrb_value self_value() const = 0;
 	[[nodiscard]] virtual const Modules &modules() const = 0;
@@ -234,6 +231,8 @@ public:
 	[[nodiscard]] virtual void *unwrap(mrb_value value,
 	    const mrb_data_type *type) const
 	    = 0;
+	virtual Version app_version() const = 0;
+	virtual Version engine_version() const = 0;
 
 	// virtual void draw_at(const Reference<Image> &, Vec2 position, Vec2
 	// scale) = 0;

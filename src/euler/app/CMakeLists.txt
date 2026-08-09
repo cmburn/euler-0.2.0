@@ -32,14 +32,10 @@ elseif (EULER_NATIVE_BUILD)
     target_sources(euler_app PUBLIC
             native/logger.cpp
             native/logger.h
-            native/renderer.cpp
-            native/renderer.h
             native/state.cpp
             native/state.h
             native/ruby_state.cpp
             native/ruby_state.h
-            native/window.cpp
-            native/window.h
     )
     add_executable(euler
             native/main.cpp
@@ -49,18 +45,13 @@ elseif (EULER_NATIVE_BUILD)
     )
     target_link_libraries(euler_app PUBLIC
             euler_vulkan
+            quill
     )
 endif ()
 
 target_link_libraries(euler_app PUBLIC
         euler_util
 )
-
-if (EULER_MATH_BUILD)
-    target_link_libraries(euler_app PUBLIC
-            euler_math
-    )
-endif ()
 
 if (EULER_PHYSICS_BUILD)
     target_link_libraries(euler_app PUBLIC

@@ -6,6 +6,10 @@
 
 #include <mruby/string.h>
 
+#ifdef EULER_NATIVE
+#include <vulkan/vulkan_core.h>
+#endif
+
 #include "euler/util/ext.h"
 
 using euler::util::Version;
@@ -245,6 +249,12 @@ Version::to_int() const
 	return (static_cast<uint32_t>(_major) << 22U)
 	    | (static_cast<uint32_t>(_minor) << 12U)
 	    | static_cast<uint32_t>(_patch);
+}
+
+uint32_t
+Version::to_vulkan() const
+{
+	return VK_MAKE_VERSION(_major, _minor, _patch);
 }
 
 Version

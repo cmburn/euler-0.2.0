@@ -220,8 +220,8 @@ count_node(const struct point *pnts, int16_t *nodes_x, size_t *nodes,
 		return;
 	nodes_x[(*nodes)++] = (int16_t)((float)pnts[i].x
 	    + ((float)pixelY - (float)pnts[i].y)
-		/ ((float)pnts[j].y - (float)pnts[i].y)
-		* ((float)pnts[j].x - (float)pnts[i].x));
+	        / ((float)pnts[j].y - (float)pnts[i].y)
+	        * ((float)pnts[j].x - (float)pnts[i].x));
 }
 
 struct polygon_scanline_info {

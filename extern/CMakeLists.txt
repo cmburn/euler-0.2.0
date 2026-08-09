@@ -1,9 +1,6 @@
 set(SDL_STATIC ON)
 set(PHYSFS_BUILD_TEST OFF)
 set(BUILD_SHARED_LIBS OFF)
-set(SLANG_ENABLE_SLANG_RHI OFF)
-set(SLANG_ENABLE_TESTING OFF)
-set(VK2D_BUILD_SDL OFF)
 
 if (EULER_NATIVE_BUILD)
     set(MRUBY_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mruby/build/host/include
@@ -43,13 +40,11 @@ if (EULER_NATIVE_BUILD)
     endif ()
 endif ()
 
-add_subdirectory(eigen)
-
-if (EULER_PHYSICS_BUILD)
-    add_subdirectory(box2d)
+if (EULER_GRAPHICS_BUILD)
+    add_subdirectory(glm)
 endif ()
 
-if (EULER_GRAPHICS_BUILD)
+if (EULER_GUI_BUILD)
     add_library(nuklear INTERFACE
             Nuklear/nuklear.h
     )
@@ -59,7 +54,7 @@ if (EULER_GRAPHICS_BUILD)
 endif ()
 
 if (EULER_NET_BUILD)
-    add_subdirectory(protobuf)
+    set(Protobuf_USE_STATIC_LIBS ON)
     add_subdirectory(GameNetworkingSockets)
 endif ()
 
@@ -68,21 +63,14 @@ if (EULER_WORLD_BUILD)
 endif ()
 
 if (EULER_NATIVE_BUILD)
+    set(SPDLOG_USE_STD_FORMAT ON)
+    set(PHYSFS_BUILD_SHARED OFF)
+    set(SDL_STATIC ON)
+    list(APPEND PC_PRIVATE_REQUIRES "sdl3")
     add_subdirectory(SDL3)
-    add_subdirectory(physfs)
-    target_sources(physfs-static PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/physfs/extras/physfssdl3.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/physfs/extras/physfssdl3.h
-    )
-
-    target_include_directories(physfs-static INTERFACE
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/physfs/extras>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/SDL/include>
-            $<INSTALL_INTERFACE:include/>
-    )
-
-    add_subdirectory(Vulkan2D)
-    target_include_directories(Vulkan2D PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/Vulkan2D
-    )
+    # TODO: implement locally?
+    add_subdirectory(tinygltf)
+    add_subdirectory(KTX-Software/lib)
+    add_subdirectory(VulkanMemoryAllocator)
+    add_subdirectory(quill)
 endif ()

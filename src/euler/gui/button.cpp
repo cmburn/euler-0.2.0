@@ -124,7 +124,7 @@ IsPressedContext::is_pressed_symbol(const euler::gui::Symbol euler_sym,
 	if (style.has_value()) {
 		const auto nk = style->to_nuklear(state);
 		return nk_button_symbol_text_styled(context, &nk, symbol, title,
-			   len, alignment)
+		           len, alignment)
 		    != nk_false;
 	}
 	return nk_button_symbol_text(context, symbol, title, len, alignment)

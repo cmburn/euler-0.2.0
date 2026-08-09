@@ -29,10 +29,12 @@ public:
 
 	static Severity parse_severity(std::string_view str);
 
-	[[nodiscard]] virtual const std::string &subsystem() const = 0;
+	[[nodiscard]] virtual std::string subsystem() const = 0;
 	virtual void set_subsystem(std::string_view name) = 0;
 	[[nodiscard]] virtual Severity severity() const = 0;
 	virtual void set_severity(Severity level) = 0;
+	[[nodiscard]] virtual std::string progname() const = 0;
+	virtual void set_progname(std::string_view name) = 0;
 
 	[[nodiscard]] virtual Reference<Logger> copy(
 	    std::optional<std::string_view> subsystem = std::nullopt) const

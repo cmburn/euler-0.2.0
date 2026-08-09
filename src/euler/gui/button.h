@@ -83,7 +83,6 @@ public:
 	[[nodiscard]] Type type() const;
 	[[nodiscard]] bool is_pressed() const;
 
-
 private:
 	[[nodiscard]] nk_style_button style() const;
 

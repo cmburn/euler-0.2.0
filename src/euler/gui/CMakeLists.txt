@@ -63,7 +63,3 @@ target_compile_options(euler_gui PUBLIC
 target_compile_definitions(euler_gui PRIVATE
         ${EULER_DEFINITIONS}
 )
-#
-#target_include_directories(euler_gui PUBLIC
-#        ${nuklear_SOURCE_DIR}
-#)

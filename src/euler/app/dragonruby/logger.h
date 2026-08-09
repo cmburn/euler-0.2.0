@@ -15,7 +15,7 @@ public:
 	    = void (*)(const char *subsystem, int level, const char *str);
 
 	Logger(std::string_view subsystem, log_write_fn log_write);
-	[[nodiscard]] const std::string &subsystem() const override;
+	[[nodiscard]] std::string subsystem() const override;
 	void set_subsystem(std::string_view name) override;
 	[[nodiscard]] Severity severity() const override;
 	void set_severity(Severity level) override;
@@ -23,8 +23,7 @@ public:
 	    std::optional<std::string_view> subsystem) const override;
 
 protected:
-	void write_log(Severity level,
-	    const std::string &message) const override;
+	void write_log(Severity, const std::string &) const override;
 
 private:
 	std::string _subsystem;

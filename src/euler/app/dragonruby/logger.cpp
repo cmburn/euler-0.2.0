@@ -76,7 +76,7 @@ Logger::Logger(std::string_view subsystem, log_write_fn log_write)
 {
 }
 
-const std::string &
+std::string
 Logger::subsystem() const
 {
 	std::scoped_lock lock(_subsystem_mutex);

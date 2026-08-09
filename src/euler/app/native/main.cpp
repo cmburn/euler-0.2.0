@@ -4,15 +4,18 @@
 #include <cstdlib>
 #include <exception>
 
-#include "euler/util/logger.h"
 #include "euler/app/native/state.h"
+#include "euler/app/state.h"
+#include "euler/util/logger.h"
 
 int
 main(const int argc, const char **argv)
 {
 	try {
-		const auto state = euler::app::native::make_state(argc, argv);
-		if (!state->initialize()) {
+		const auto state
+		    = euler::util::make_reference<euler::app::State>();
+		const auto cfg = euler::app::native::parse_config(argc, argv);
+		if (!state->initialize(cfg)) {
 			state->log()->error("Failed to initialize state");
 			return EXIT_FAILURE;
 		}
@@ -33,5 +36,3 @@ main(const int argc, const char **argv)
 		return EXIT_FAILURE;
 	}
 }
-
-

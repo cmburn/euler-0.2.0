@@ -35,8 +35,6 @@ private:
 		util::Color color;
 	};
 
-
-
 	void draw_line(const std::function<bool(PointCommand &)> &fn);
 
 	void draw_uploaded(const std::string &label, Vec2i16 position);
@@ -57,14 +55,13 @@ private:
 	mrb_value grid();
 	mrb_value render_target();
 
-
-
 	static constexpr int16_t ZERO_I16 = 0;
 	void update_size();
 	// void set_pixel(int16_t x, int16_t y, util::Color color);
 	util::Reference<util::Image> draw_circle(const CircleCommand &cmd,
 	    const std::string &label);
-	void upload_image(const std::string &label, const util::Reference<util::Image> &image);
+	void upload_image(const std::string &label,
+	    const util::Reference<util::Image> &image);
 
 	void push_output(mrb_sym sym, mrb_value value);
 
@@ -77,7 +74,8 @@ public:
 	    std::function<void(
 	        const util::Reference<graphics::UserInterface> &)>
 	        ui) override;
-	struct nk_image to_nk(const util::Reference<util::Image> &image) override;
+	struct nk_image to_nk(
+	    const util::Reference<util::Image> &image) override;
 
 private:
 	util::WeakReference<RubyState> _ruby;

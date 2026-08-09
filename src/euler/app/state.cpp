@@ -5,8 +5,8 @@
 #include <cassert>
 
 #include "euler/physics/ext.h"
-#include "euler/util/logger.h"
 #include "euler/util/ext.h"
+#include "euler/util/logger.h"
 
 #ifndef EULER_GV_STATE
 #define EULER_GV_STATE app
@@ -14,14 +14,18 @@
 
 static constexpr auto GV_STATE_SYM = "$" MRB_STRINGIZE(EULER_GV_STATE);
 
+static constexpr euler::util::Version ENGINE_VERSION(0, 1, 0);
+
 using euler::app::State;
 
-State::~State() = default;
-
-State::State(const Arguments &args)
-    : EULER_APP_NAMESPACE::State(args)
+static euler::util::Reference<State>
+from_mrb(mrb_state *mrb, mrb_value self)
 {
+	return euler::util::State::get(mrb)->unwrap<State>(self);
 }
+
+State::~State() = default;
+State::State() = default;
 
 euler::util::State::nthread_t
 State::available_threads() const
@@ -45,20 +49,10 @@ state_allocate(mrb_state *mrb, const mrb_value self)
 	return mrb_obj_value(obj);
 }
 
-// static mrb_value
-// state_is_key_down(mrb_state *mrb, const mrb_value self)
-// {
-// 	const auto state = State::get(mrb)->unwrap<State>(self);
-// 	mrb_sym key_sym;
-// 	state->mrb()->get_args("n", &key_sym);
-// 	const auto down = state->is_key_down(key_sym);
-// 	return mrb_bool_value(down);
-// }
-
 static mrb_value
 state_phase(mrb_state *mrb, const mrb_value self)
 {
-	const auto state = State::get(mrb)->unwrap<State>(self);
+	const auto state = from_mrb(mrb, self);
 	switch (state->phase()) {
 	case State::Phase::Load: return EULER_SYM_VAL(load);
 	case State::Phase::Input: return EULER_SYM_VAL(input);
@@ -72,46 +66,46 @@ state_phase(mrb_state *mrb, const mrb_value self)
 static mrb_value
 state_ticks(mrb_state *mrb, const mrb_value self)
 {
-	const auto state = State::get(mrb)->unwrap<State>(self);
+	const auto state = from_mrb(mrb, self);
 	return state->mrb()->int_value(state->ticks());
 }
 
 static mrb_value
 state_fps(mrb_state *mrb, const mrb_value self)
 {
-	const auto state = State::get(mrb)->unwrap<State>(self);
+	const auto state = from_mrb(mrb, self);
 	return state->mrb()->float_value(state->fps());
 }
 
 static mrb_value
 state_dt(mrb_state *mrb, const mrb_value self)
 {
-	const auto state = State::get(mrb)->unwrap<State>(self);
+	const auto state = from_mrb(mrb, self);
 	return state->mrb()->float_value(state->dt());
 }
 
 static mrb_value
 state_progname(mrb_state *mrb, const mrb_value self)
 {
-	const auto state = State::get(mrb)->unwrap<State>(self);
+	const auto state = from_mrb(mrb, self);
 	return state->mrb()->str_new_cstr(state->progname().c_str());
 }
 
 static mrb_value
 state_title(mrb_state *mrb, const mrb_value self)
 {
-	const auto state = State::get(mrb)->unwrap<State>(self);
+	const auto state = from_mrb(mrb, self);
 	return state->mrb()->str_new_cstr(state->title().c_str());
 }
 
 bool
-State::initialize()
+State::initialize(const util::Config &config)
 {
 	mrb()->mrb()->ud = util::WeakReference(this).wrap();
 	initialize_self();
-	if (!EULER_APP_NAMESPACE::State::preinit()) return false;
+	if (!EULER_APP_NAMESPACE::State::initialize(config)) return false;
 	log()->debug("Initializing core modules");
-	/* TODO: proper physfs limiting for module load */
+	/* TODO: proper physfs limiting for module load? */
 	auto self = util::Reference(this);
 	auto &mods = modules();
 	assert(mods.mod != nullptr);
@@ -128,9 +122,8 @@ State::initialize()
 	mods.util.mod = util::init(self, mods.mod);
 	log()->debug("Core modules initialized");
 
-	if (!EULER_APP_NAMESPACE::State::initialize()) return false;
-	// auto self = util::Reference(this);
-	// 	util::init(self, mod);
+	// if (!EULER_APP_NAMESPACE::State::initialize(argc, argv)) return
+	// false; auto self = util::Reference(this); 	util::init(self, mod);
 	// #ifdef EULER_MATH
 	// 	math::init(self, mod);
 	// #endif
@@ -203,6 +196,19 @@ State::self_value() const
 	auto gv = gv_state();
 	return mrb_nil_p(gv) ? _self_value : gv;
 }
+
+euler::util::Version
+State::app_version() const
+{
+	return _app_version;
+}
+
+euler::util::Version
+State::engine_version() const
+{
+	return ENGINE_VERSION;
+}
+
 void
 State::initialize_self()
 {

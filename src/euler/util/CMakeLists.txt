@@ -1,30 +1,30 @@
 add_library(euler_util STATIC
-        color.cpp
-        color.h
+        config.cpp
+        config.h
+        date_time.cpp
+        date_time.h
         error.cpp
         error.h
         ext.cpp
         ext.h
-        image.cpp
-        image.h
-        image_loader.cpp
-        image_loader.h
+        file.cpp
+        file.h
         logger.cpp
         logger.h
-        math.cpp
-        math.h
         object.cpp
         object.h
         ruby_state.cpp
         ruby_state.h
         state.cpp
         state.h
+        storage.cpp
+        storage.h
+        time.cpp
+        time.h
         types.cpp
         types.h
         version.cpp
         version.h
-        window.cpp
-        window.h
 )
 
 target_compile_definitions(euler_util PUBLIC
@@ -36,7 +36,7 @@ target_compile_options(euler_util PUBLIC
 )
 
 target_link_libraries(euler_util PUBLIC
-        eigen
+        glm
 )
 
 # TODO: not this
@@ -55,19 +55,3 @@ target_link_libraries(euler_util PUBLIC
         mruby
         SDL3-static
 )
-#
-#if (EULER_NATIVE_BUILD)
-#    target_link_libraries(euler_util PUBLIC
-#            mruby
-#            SDL3-static
-#    )
-#endif ()
-
-if (EULER_GRAPHICS_BUILD)
-    target_link_libraries(euler_util PUBLIC
-            nuklear
-    )
-    target_sources(euler_util PUBLIC
-            nuklear.h
-    )
-endif ()

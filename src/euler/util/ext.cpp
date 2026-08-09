@@ -2,7 +2,6 @@
 
 #include "euler/util/ext.h"
 
-#include "euler/util/color.h"
 #include "euler/util/logger.h"
 #include "euler/util/version.h"
 
@@ -13,7 +12,6 @@ euler::util::init(const Reference<State> &state, RClass *, RClass *)
 	const auto mod = util.mod;
 	util.logger = Logger::init(state, mod);
 	util.version = Version::init(state, mod);
-	util.color = Color::init(state, mod);
 	return mod;
 }
 

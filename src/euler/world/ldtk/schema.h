@@ -9160,7 +9160,7 @@ from_json(const json &j, LayerDefProperties &x)
 	x.parallax_factor_x = j.at("parallaxFactorX").get<ParallaxFactorX>();
 	x.auto_tiles_killed_by_other_layer_uid
 	    = j.at("autoTilesKilledByOtherLayerUid")
-		  .get<AutoTilesKilledByOtherLayerUid>();
+	          .get<AutoTilesKilledByOtherLayerUid>();
 }
 
 inline void

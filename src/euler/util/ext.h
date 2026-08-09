@@ -168,8 +168,8 @@ pod_datatype(const char *name)
 		.struct_name = name,
 		.dfree =
 		    [](mrb_state *, void *ptr) {
-			    auto self = static_cast<T *>(ptr);
-			    self->~T();
+		            auto self = static_cast<T *>(ptr);
+		            self->~T();
 		    },
 	};
 }
