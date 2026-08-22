@@ -2,6 +2,8 @@ set(SDL_STATIC ON)
 set(PHYSFS_BUILD_TEST OFF)
 set(BUILD_SHARED_LIBS OFF)
 
+add_subdirectory(nlohmann-json)
+
 if (EULER_NATIVE_BUILD)
     set(MRUBY_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mruby/build/host/include
             CACHE PATH "Path to the mruby include directory" FORCE)
@@ -58,9 +60,6 @@ if (EULER_NET_BUILD)
     add_subdirectory(GameNetworkingSockets)
 endif ()
 
-if (EULER_WORLD_BUILD)
-    add_subdirectory(nlohmann-json)
-endif ()
 
 if (EULER_NATIVE_BUILD)
     set(SPDLOG_USE_STD_FORMAT ON)

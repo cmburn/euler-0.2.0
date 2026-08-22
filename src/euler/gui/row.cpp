@@ -45,10 +45,10 @@ read_button_args(mrb_state *mrb, mrb_value *block)
 		.rest = nullptr,
 	};
 	const auto state = euler::util::State::get(mrb);
-	state->mrb()->get_args(":&", &kwargs, block);
+	state->rb().get_args(":&", &kwargs, block);
 	euler::gui::Button::Settings settings = {};
 	if (!mrb_undef_p(kw_values[0]))
-		settings.label = state->mrb()->string_cstr(kw_values[0]);
+		settings.label = state->rb().string_cstr(kw_values[0]);
 	if (!mrb_undef_p(kw_values[1]))
 		settings.color = euler::util::Color::read(mrb, kw_values[1]);
 	if (!mrb_undef_p(kw_values[2])) {
@@ -64,7 +64,7 @@ row_button(mrb_state *mrb, const mrb_value self_value)
 	using namespace euler;
 	auto state = util::State::get(mrb);
 	auto self = state->unwrap<Row>(self_value);
-	if (!state->mrb()->block_given_p()) {
+	if (!state->rb().block_given_p()) {
 		mrb_raise(mrb, mrb->eStandardError_class,
 		    "Block required for Row#button");
 	}
@@ -73,7 +73,7 @@ row_button(mrb_state *mrb, const mrb_value self_value)
 	mrb_value out = mrb_nil_value();
 	self->button(settings, [&](util::Reference<gui::Button> &b) {
 		const auto value = state->wrap(b);
-		out = state->mrb()->yield(block, value);
+		out = state->rb().yield(block, value);
 	});
 	return out;
 }
@@ -82,10 +82,10 @@ RClass *
 Row::init(const euler::util::Reference<euler::util::State> &state, RClass *mod,
     RClass *)
 {
-	const auto klass = state->mrb()->define_class_under(mod, "Row",
+	const auto klass = state->rb().define_class_under(mod, "Row",
 	    state->object_class());
 	MRB_SET_INSTANCE_TT(klass, MRB_TT_DATA);
-	state->mrb()->define_method(klass, "button", row_button,
+	state->rb().define_method(klass, "button", row_button,
 	    MRB_ARGS_KEY(0, 3) | MRB_ARGS_BLOCK());
 	return klass;
 }

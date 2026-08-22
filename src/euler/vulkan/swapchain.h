@@ -10,6 +10,7 @@
 namespace euler::vulkan {
 class Surface;
 class Renderer;
+class GraphicsPipeline;
 
 /* Swapchain is embedded directly in Surface, so we don't need to worry about
  * inheriting util::Object, we're only a separate class for readability. */
@@ -24,10 +25,10 @@ public:
 		    const vk::raii::SurfaceKHR &surface);
 	};
 
-	Swapchain(Surface *surface, const Capabilities *capabilities,
+	Swapchain(Surface &surface, const Capabilities &capabilities,
 	    vk::raii::SwapchainKHR &&sc = nullptr);
 
-	Surface *
+	const Surface &
 	surface() const
 	{
 		return _surface;
@@ -41,21 +42,29 @@ public:
 		return sc;
 	}
 
+	vk::Extent2D extent() const;
+	vk::raii::ImageView &image_view(uint32_t index);
+	const vk::raii::ImageView &image_view(uint32_t index) const;
+	vk::Image &image(uint32_t index);
+	const vk::Image &image(uint32_t index) const;
+	util::Reference<GraphicsPipeline> graphics_pipeline() const;
+
 private:
 	vk::raii::SwapchainKHR create_swapchain(
 	    vk::raii::SwapchainKHR &&sc) const;
-	std::vector<vk::raii::Image> create_images() const;
+	std::vector<vk::Image> create_images() const;
 	std::vector<vk::raii::ImageView> create_image_views() const;
 	util::Reference<Renderer> renderer() const;
-
-	Surface *_surface;
-	const Capabilities *_capabilities;
-	vk::Extent2D _extent;
+	util::Reference<GraphicsPipeline> make_graphics_pipeline() const;
+	Surface &_surface;
+	const Capabilities &_capabilities;
 	vk::raii::SwapchainKHR _swapchain;
-	std::vector<vk::raii::Image> _images;
+	std::vector<vk::Image> _images;
 	std::vector<vk::raii::ImageView> _image_views;
-	vk::raii::PipelineLayout _pipeline_layout = nullptr;
-	vk::raii::Pipeline _pipeline = nullptr;
+	util::Reference<GraphicsPipeline> _graphics_pipeline;
+
+	// vk::raii::PipelineLayout _pipeline_layout = nullptr;
+	// vk::raii::Pipeline _pipeline = nullptr;
 };
 } /* namespace euler::vulkan */
 

@@ -18,20 +18,20 @@
 
 namespace euler::app {
 class State final : public EULER_APP_NAMESPACE::State {
-	BIND_MRUBY("Euler::App::State", State, app.state);
 
 public:
 	~State() override;
 	State();
 	[[nodiscard]] nthread_t available_threads() const override;
-	[[nodiscard]] mrb_value gv_state() const override;
-	bool initialize(const util::Config &config) override;
+	[[nodiscard]] mrb_value gv_state() override;
+	bool initialize(std::string_view progname,
+	    const util::Config &config) override;
 	[[nodiscard]] tick_t last_tick() const override;
 	[[nodiscard]] float fps() const override;
 	[[nodiscard]] tick_t total_ticks() const override;
 	void tick() override;
 	[[nodiscard]] RClass *object_class() const override;
-	void *unwrap(mrb_value value, const mrb_data_type *type) const override;
+	void *unwrap(mrb_value value, const mrb_data_type *type) override;
 
 	[[nodiscard]] const Modules &
 	modules() const override
@@ -47,10 +47,16 @@ public:
 
 	[[nodiscard]] Phase phase() const override;
 	void set_phase(Phase phase) override;
-	mrb_value self_value() const override;
+	mrb_value self_value() override;
 
 	util::Version app_version() const override;
 	util::Version engine_version() const override;
+
+	[[nodiscard]] const util::Config &
+	config() const override
+	{
+		return _config;
+	}
 
 protected:
 	[[nodiscard]] const mrb_data_type *
@@ -62,6 +68,7 @@ protected:
 private:
 	void initialize_self();
 
+	util::Config _config;
 	bool _initialized_self = false;
 	Phase _phase = Phase::Update;
 	float _fps = 0;

@@ -3,15 +3,25 @@
 #include "euler/vulkan/renderer.h"
 
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <unordered_map>
+#include <vector>
 
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_vulkan.h>
 
+#include "euler/util/config.h"
 #include "euler/util/logger.h"
 #include "euler/util/version.h"
+#include "euler/vulkan/compound_shader.h"
+#include "euler/vulkan/compute_shader.h"
+#include "euler/vulkan/fragment_shader.h"
+#include "euler/vulkan/graphics_pipeline.h"
+#include "euler/vulkan/shader.h"
+#include "euler/vulkan/swapchain.h"
+#include "euler/vulkan/vertex_shader.h"
 
 #ifndef ENGINE_NAME
 #define EULER_ENGINE_NAME "euler"
@@ -87,6 +97,12 @@ Renderer::global_init()
 		    SDL_GetError());
 		std::exit(EXIT_FAILURE);
 	});
+}
+
+uint32_t
+Renderer::window_count() const
+{
+	return static_cast<uint32_t>(_windows.size());
 }
 
 static PFN_vkGetInstanceProcAddr
@@ -176,42 +192,37 @@ vma_allocator_flags(vk::raii::PhysicalDevice &device)
 	return flags;
 }
 
-static std::vector<const char *>
+static const std::vector<const char *> &
 instance_extensions(const LogRef &log)
 {
-	Renderer::global_init();
-	static bool initialized = false;
-	static std::mutex vec_mutex;
 	static std::vector<const char *> vec;
-	/* could cause trouble if we're trying to create two at once */
-	std::lock_guard lock(vec_mutex);
-	if (initialized) return vec;
-	uint32_t count;
-	const auto *exts = SDL_Vulkan_GetInstanceExtensions(&count);
-	if (exts == nullptr) {
-		if (log != nullptr) {
-			log->fatal(
-			    "Failed to get SDL Vulkan instance extensions");
+	static std::once_flag once_flag;
+	std::call_once(once_flag, [&]() {
+		Renderer::global_init();
+		uint32_t count;
+		const auto *exts = SDL_Vulkan_GetInstanceExtensions(&count);
+		if (exts == nullptr) {
+			if (log != nullptr) {
+				log->fatal("Failed to get SDL Vulkan instance "
+				           "extensions");
+			}
+			fprintf(stderr,
+			    "Failed to get SDL Vulkan instance extensions\n");
+			std::exit(EXIT_FAILURE);
 		}
-		fprintf(stderr,
-		    "Failed to get SDL Vulkan instance extensions\n");
-		std::exit(EXIT_FAILURE);
-	}
-	vec.reserve(count);
-	for (uint32_t i = 0; i < count; i++) vec.emplace_back(exts[i]);
-	initialized = true;
-	if (vec.empty()) return vec;
-	if (log != nullptr)
-		log->info("Available SDL Vulkan instance extensions:");
-	for (const auto s : vec) log->info("\t- {}", s);
-	log->info("");
+		vec.reserve(count);
+		for (uint32_t i = 0; i < count; i++) vec.emplace_back(exts[i]);
+		if (vec.empty()) return;
+		if (log != nullptr)
+			log->info("Using Vulkan instance extensions:");
+		for (const auto s : vec) log->info("\t- {}", s);
+	});
 	return vec;
 }
 
 Renderer::Renderer(const util::Reference<util::State> &state)
     : _log(state->log())
     , _state(state.weaken())
-    , _preferred_gpu(state->preferred_gpu())
     , _context(get_instance_proc_addr())
     , _instance(create_instance())
     , _physical_device(select_physical_device())
@@ -220,13 +231,73 @@ Renderer::Renderer(const util::Reference<util::State> &state)
     , _device(create_logical_device())
     , _allocator(make_allocator())
     , _graphics_queue(_device, _graphics_index, 0)
+    , _fragment_shader(load_fragment_shader("shaders/shader.frag.spv"))
+    , _vertex_shader(load_vertex_shader("shaders/shader.vert.spv"))
+    , _command_pool(create_command_pool())
+    , _command_buffers(create_command_buffers())
 {
 }
 
 Renderer::~Renderer() { vmaDestroyAllocator(_allocator); }
 
+euler::util::Reference<euler::vulkan::Window>
+Renderer::create_window(const char *title, int16_t w, int16_t h,
+    Window::Flags flags)
+{
+	const auto ptr = new Window(util::Reference(this), title, w, h, flags);
+	auto window = util::Reference(ptr);
+	_windows.emplace_back(window);
+	_window_indices.emplace(std::string(title), _windows.size() - 1);
+	rebuild_command_buffers();
+	return window;
+}
+
+euler::util::Reference<euler::vulkan::FragmentShader>
+Renderer::load_fragment_shader(const std::string_view path)
+{
+	return load_shader<FragmentShader>(path);
+}
+
+euler::util::Reference<euler::vulkan::VertexShader>
+Renderer::load_vertex_shader(const std::string_view path)
+{
+	return load_shader<VertexShader>(path);
+}
+
+euler::util::Reference<euler::vulkan::ComputeShader>
+Renderer::load_compute_shader(const std::string_view path)
+{
+	return load_shader<ComputeShader>(path);
+}
+
+euler::util::Reference<euler::vulkan::CompoundShader>
+Renderer::load_compound_shader(std::string_view,
+    const std::vector<std::pair<std::string_view, Shader::Type>> &)
+{
+	/* TODO */
+	return nullptr;
+}
+
+euler::util::Reference<euler::vulkan::FragmentShader>
+Renderer::fragment_shader() const
+{
+	return _fragment_shader;
+}
+
+euler::util::Reference<euler::vulkan::VertexShader>
+Renderer::vertex_shader() const
+{
+	return _vertex_shader;
+}
+
+void
+Renderer::draw()
+{
+	record_command_buffers();
+}
+
 euler::util::Reference<euler::util::State>
-Renderer::state()
+Renderer::state() const
 {
 	return _state.strengthen();
 }
@@ -297,31 +368,25 @@ is_compatible(VkInstance instance, const vk::raii::PhysicalDevice &pd)
 	auto features = pd.getFeatures2<vk::PhysicalDeviceFeatures2,
 	    vk::PhysicalDeviceVulkan11Features,
 	    vk::PhysicalDeviceVulkan13Features,
-	    vk::PhysicalDeviceVulkan14Features,
 	    vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-	if (!features.get<vk::PhysicalDeviceVulkan11Features>()
-	        .shaderDrawParameters) {
-		return false;
-	}
-	if (!features.get<vk::PhysicalDeviceVulkan13Features>()
-	        .dynamicRendering) {
-		return false;
-	}
-	if (!features.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>()
-	        .extendedDynamicState) {
-		return false;
-	}
+#define REQUIRE_FEATURE(FEATURE_SET, FEATURE)                                  \
+	do {                                                                   \
+		if (!features.get<vk::PhysicalDevice##FEATURE_SET>().FEATURE)  \
+			return false;                                          \
+	} while (0)
+	REQUIRE_FEATURE(Vulkan11Features, shaderDrawParameters);
+	REQUIRE_FEATURE(Vulkan13Features, dynamicRendering);
+	REQUIRE_FEATURE(ExtendedDynamicStateFeaturesEXT, extendedDynamicState);
+#undef REQUIRE_FEATURE
 	return true;
 }
 
 static std::optional<vk::raii::PhysicalDevice>
-first_compatible(VkInstance instance,
+first_compatible(const VkInstance instance,
     const std::vector<vk::raii::PhysicalDevice> &devices)
 {
-	/* TODO: Need to verify with SDL_Vulkan that device supports surfaces */
-	for (const auto &pd : devices) {
+	for (const auto &pd : devices)
 		if (is_compatible(instance, pd)) return pd;
-	}
 	return std::nullopt;
 }
 
@@ -366,11 +431,12 @@ Renderer::select_physical_device()
 		_log->info("Found device with ID {} ({})", properties.deviceID,
 		    properties.deviceName.data());
 	}
-	bool found_preferred = rank_physical_devices(devices, _preferred_gpu);
-	if (_preferred_gpu.has_value() && !found_preferred) {
+	const auto preferred = state()->config().preferred_gpu;
+	bool found_preferred = rank_physical_devices(devices, preferred);
+	if (preferred.has_value() && !found_preferred) {
 		_log->warn("Unable to find user-specified graphics "
 		           "device with ID {}",
-		    _preferred_gpu.value());
+		    preferred.value());
 	}
 	const auto pd = first_compatible(*_instance, devices);
 	if (!pd.has_value())
@@ -379,6 +445,25 @@ Renderer::select_physical_device()
 	_log->info("Selected device with ID {} ({})", props.deviceID,
 	    props.deviceName.data());
 	return pd.value();
+}
+
+template <std::size_t N, typename F>
+static constexpr auto
+generate_array(F &&f)
+{
+	return [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+		return std::array<std::invoke_result_t<F &>, N> { (
+		    static_cast<void>(Is), f())... };
+	}(std::make_index_sequence<N> {});
+}
+
+Renderer::CommandBufferSet
+Renderer::make_command_buffer_set()
+{
+	return generate_array<MAX_FRAMES_IN_FLIGHT>([]() {
+		//
+		return vk::raii::CommandBuffer(nullptr);
+	});
 }
 
 uint32_t
@@ -456,4 +541,210 @@ Renderer::make_allocator()
 		_log->fatal("Failed to create Vulkan memory allocator");
 	}
 	return allocator;
+}
+
+static std::vector<uint32_t>
+read_file(const std::filesystem::path &path)
+{
+	assert(std::filesystem::exists(path));
+	std::ifstream ifs(path, std::ios::binary | std::ios::ate);
+	if (!ifs) {
+		throw std::runtime_error(
+		    "failed to open file: " + path.string());
+	}
+	const auto size = static_cast<std::streamsize>(ifs.tellg());
+	if (size < 0 || size % sizeof(uint32_t) != 0) {
+		throw std::runtime_error(
+		    "file size is not a multiple of 4 bytes: " + path.string());
+	}
+	std::vector<uint32_t> buffer(
+	    static_cast<size_t>(size) / sizeof(uint32_t));
+	ifs.seekg(0);
+	ifs.read(reinterpret_cast<char *>(buffer.data()), size);
+	return buffer;
+}
+
+std::vector<uint32_t>
+Renderer::load_shader_data(std::string_view path) const
+{
+	for (const auto &shader_path : state()->config().shader_paths) {
+		const auto full_path
+		    = std::filesystem::path(shader_path).append(path);
+		if (!std::filesystem::exists(full_path)) continue;
+		return read_file(full_path);
+	}
+	std::stringstream ss;
+	ss << "Shader file '" << path
+	   << "' not found in any shader path. Searched paths:\n";
+	for (const auto &shader_path : state()->config().shader_paths) {
+		ss << "  - '" << shader_path << "'\n";
+	}
+
+	log()->error("{}", ss.str());
+	const auto msg = std::format(
+	    "Shader file '{}' not found in any shader path", path);
+
+	throw std::invalid_argument(msg);
+}
+
+vk::raii::CommandPool
+Renderer::create_command_pool()
+{
+	const vk::CommandPoolCreateInfo info = {
+		.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+		.queueFamilyIndex = _graphics_index,
+	};
+	return vk::raii::CommandPool(_device, info);
+}
+
+std::vector<Renderer::CommandBufferSet>
+Renderer::create_command_buffers()
+{
+	const uint32_t n = window_count();
+	if (n == 0) return {};
+	const auto cmd_buf_count = MAX_FRAMES_IN_FLIGHT * n;
+	const vk::CommandBufferAllocateInfo info = {
+		.commandPool = *_command_pool,
+		.level = vk::CommandBufferLevel::ePrimary,
+		.commandBufferCount = cmd_buf_count,
+	};
+	auto bufs = vk::raii::CommandBuffers(_device, info);
+	std::vector<CommandBufferSet> v;
+	v.reserve(n);
+	for (uint32_t i = 0; i < n; ++i) {
+		CommandBufferSet set = make_command_buffer_set();
+		for (uint32_t j = 0; j < MAX_FRAMES_IN_FLIGHT; ++j)
+			set[j] = std::move(bufs[i * MAX_FRAMES_IN_FLIGHT + j]);
+		v.emplace_back(std::move(set));
+	}
+	return v;
+}
+
+void
+Renderer::rebuild_command_buffers()
+{
+	_command_buffers = create_command_buffers();
+}
+
+void
+Renderer::rebuild_window_cache()
+{
+	const uint32_t n = std::ranges::count(_windows, nullptr);
+	const auto old = std::move(_windows);
+	_windows = {};
+	_window_indices = {};
+	_windows.reserve(n);
+	_window_indices.reserve(n);
+	for (uint32_t i = 0, j = 0; i < old.size(); ++i) {
+		const auto &w = old[i].strengthen();
+		if (w == nullptr) continue;
+		_windows.emplace_back(w);
+		_window_indices.emplace(std::string(w->title()), j++);
+	}
+	rebuild_command_buffers();
+}
+void
+Renderer::record_command_buffer(const vk::raii::CommandBuffer &cmd,
+    Window &window, const uint32_t image_index)
+{
+	using StageFlag = vk::PipelineStageFlagBits;
+	cmd.begin({});
+	auto &sc = window.surface().swapchain();
+	const ImageLayoutTransition start_ilt = {
+		.swapchain = sc,
+		.image_index = image_index,
+		.old_layout = vk::ImageLayout::eUndefined,
+		.new_layout = vk::ImageLayout::eColorAttachmentOptimal,
+		.src_access_mask = {},
+		.dst_access_mask = vk::AccessFlagBits::eColorAttachmentWrite,
+		.src_stage_mask = StageFlag::eColorAttachmentOutput,
+		.dst_stage_mask = StageFlag::eColorAttachmentOutput,
+	};
+	transition_image_layout(cmd, start_ilt);
+	static constexpr vk::ClearValue clearColor
+	    = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+	const vk::RenderingAttachmentInfo attachment_info = {
+		.imageView = sc.image_view(image_index),
+		.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+		.loadOp = vk::AttachmentLoadOp::eClear,
+		.storeOp = vk::AttachmentStoreOp::eStore,
+		.clearValue = clearColor,
+	};
+	const auto ext = sc.extent();
+	const vk::Rect2D render_area = {
+		.offset = vk::Offset2D { 0, 0 },
+		.extent = ext,
+	};
+	const vk::RenderingInfo rendering_info = {
+		.renderArea = render_area,
+		.layerCount = 1,
+		.colorAttachmentCount = 1,
+		.pColorAttachments = &attachment_info,
+	};
+	const auto gp = sc.graphics_pipeline();
+	cmd.beginRendering(rendering_info);
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, gp->pipeline());
+	const vk::Viewport viewport = {
+		.x = 0.0f,
+		.y = 0.0f,
+		.width = static_cast<float>(ext.width),
+		.height = static_cast<float>(ext.height),
+		.minDepth = 0.0f,
+		.maxDepth = 1.0f,
+	};
+	cmd.setViewport(0, viewport);
+	cmd.setScissor(0, render_area);
+	window.surface().record_commands(cmd, image_index);
+	cmd.draw(3, 1, 0, 0);
+	cmd.endRendering();
+	const ImageLayoutTransition end_ilt = {
+		.swapchain = sc,
+		.image_index = image_index,
+		.old_layout = vk::ImageLayout::eColorAttachmentOptimal,
+		.new_layout = vk::ImageLayout::ePresentSrcKHR,
+		.src_access_mask = vk::AccessFlagBits::eColorAttachmentWrite,
+		.dst_access_mask = {},
+		.src_stage_mask = StageFlag::eColorAttachmentOutput,
+		.dst_stage_mask = StageFlag::eBottomOfPipe,
+	};
+	transition_image_layout(cmd, end_ilt);
+	cmd.end();
+}
+
+void
+Renderer::record_command_buffers()
+{
+	for (const auto [i, wr] : std::views::enumerate(_windows)) {
+		if (wr == nullptr) continue;
+		auto w = wr.strengthen();
+		for (uint32_t j = 0; j < MAX_FRAMES_IN_FLIGHT; ++j) {
+			const auto &buf = _command_buffers[i][j];
+			record_command_buffer(buf, *w, j);
+		}
+	}
+}
+
+void
+Renderer::transition_image_layout(const vk::raii::CommandBuffer &buf,
+    const ImageLayoutTransition &ilt)
+{
+	const auto &i = ilt.swapchain.image(ilt.image_index);
+	const vk::ImageMemoryBarrier barrier = {
+		.srcAccessMask = ilt.src_access_mask,
+		.dstAccessMask = ilt.dst_access_mask,
+		.oldLayout = ilt.old_layout,
+		.newLayout = ilt.new_layout,
+		.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+		.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+		.image = i,
+		.subresourceRange = {
+		    .aspectMask = vk::ImageAspectFlagBits::eColor,
+		    .baseMipLevel = 0,
+		    .levelCount = 1,
+		    .baseArrayLayer = 0,
+		    .layerCount = 1,
+		},
+	};
+	buf.pipelineBarrier(ilt.src_stage_mask, ilt.dst_stage_mask, {}, nullptr,
+	    nullptr, barrier);
 }

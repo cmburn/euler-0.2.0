@@ -3,6 +3,9 @@
 #ifndef EULER_GRAPHICS_RENDER_TARGET_H
 #define EULER_GRAPHICS_RENDER_TARGET_H
 
+#include <array>
+#include <vector>
+
 #include <glm/glm.hpp>
 
 #include "euler/graphics/color.h"

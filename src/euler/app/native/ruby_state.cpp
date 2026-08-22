@@ -40,18 +40,18 @@ wrap_call(mrb_state *mrb, const auto &func) -> decltype(func())
 		if constexpr (std::is_void_v<T>) {
 			func();
 			mrb->jmp = prev_jmpbuf;
-			state->mrb()->raise_on_error();
+			state->rb().raise_on_error();
 		} else {
 			auto result = func();
 			mrb->jmp = prev_jmpbuf;
-			state->mrb()->raise_on_error();
+			state->rb().raise_on_error();
 			return result;
 		}
 	}
 	MRB_CATCH(&new_jmpbuf)
 	{
 		mrb->jmp = prev_jmpbuf;
-		state->mrb()->raise_on_error();
+		state->rb().raise_on_error();
 		return decltype(func())();
 	}
 	MRB_END_EXC(&new_jmpbuf)
@@ -66,8 +66,14 @@ RubyState::RubyState()
 
 RubyState::~RubyState() { close(); }
 
-mrb_state *
+const mrb_state *
 RubyState::mrb() const
+{
+	return _mrb;
+}
+
+mrb_state *
+RubyState::mrb()
 {
 	return _mrb;
 }
@@ -473,7 +479,9 @@ RubyState::class_real(RClass *cl)
 void
 RubyState::close()
 {
-	WRAP_CALL(mrb_close(_mrb));
+	if (_closed) return;
+	mrb_close(_mrb);
+	_closed = true;
 }
 
 RProc *
@@ -1019,7 +1027,7 @@ RubyState::hash_check_kdict(mrb_value self)
 		const auto key = ary_entry(keys, i);
 		if (mrb_symbol_p(key)) continue;
 		const auto state = euler::app::native::State::get(_mrb);
-		throw euler::util::ArgumentError(state->mrb(),
+		throw euler::util::ArgumentError(state->rb(),
 		    "keyword argument with non symbol keys");
 	}
 }

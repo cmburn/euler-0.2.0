@@ -13,6 +13,7 @@ add_library(euler_util STATIC
         logger.h
         object.cpp
         object.h
+        optparse.h
         ruby_state.cpp
         ruby_state.h
         state.cpp
@@ -36,7 +37,7 @@ target_compile_options(euler_util PUBLIC
 )
 
 target_link_libraries(euler_util PUBLIC
-        glm
+        nlohmann_json::nlohmann_json
 )
 
 # TODO: not this

@@ -2,9 +2,7 @@
 
 #include "euler/util/version.h"
 
-#include <utility>
-
-#include <mruby/string.h>
+#include <vector>
 
 #ifdef EULER_NATIVE
 #include <vulkan/vulkan_core.h>
@@ -30,7 +28,7 @@ static mrb_value
 version_allocate(mrb_state *mrb, const mrb_value self)
 {
 	auto state = euler::util::State::get(mrb);
-	auto obj = state->mrb()->data_object_alloc(mrb_class_ptr(self),
+	auto obj = state->rb().data_object_alloc(mrb_class_ptr(self),
 	    new Version(0, 1, 0), &Version::TYPE);
 	return mrb_obj_value(obj);
 }
@@ -42,7 +40,7 @@ parse_version_string(mrb_state *mrb, const char *str, mrb_int &major,
 	auto state = euler::util::State::get(mrb);
 	if (*str == 'v') ++str;
 	if (sscanf(str, "%ld.%ld.%ld", &major, &minor, &patch) != 3) {
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Invalid version string format");
 	}
 }
@@ -53,7 +51,7 @@ parse_single_version_arg(mrb_state *mrb, mrb_value arg, mrb_int &major,
 {
 	auto state = euler::util::State::get(mrb);
 	if (mrb_string_p(arg)) {
-		parse_version_string(mrb, state->mrb()->str_to_cstr(arg), major,
+		parse_version_string(mrb, state->rb().str_to_cstr(arg), major,
 		    minor, patch);
 		return;
 	}
@@ -64,7 +62,7 @@ parse_single_version_arg(mrb_state *mrb, mrb_value arg, mrb_int &major,
 		patch = packed & 0xFFF;
 		return;
 	}
-	state->mrb()->raise(state->mrb()->argument_error(),
+	state->rb().raise(state->rb().argument_error(),
 	    "Expected version string or packed integer for single argument");
 }
 
@@ -83,29 +81,29 @@ read_version_args(mrb_state *mrb)
 	mrb_int minor = 0;
 	mrb_int patch = 0;
 
-	switch (state->mrb()->get_argc()) {
+	switch (state->rb().get_argc()) {
 	case 0:
 		major = 0;
 		minor = 1;
 		patch = 0;
 		break;
 	case 1:
-		parse_single_version_arg(mrb, state->mrb()->get_arg1(), major,
+		parse_single_version_arg(mrb, state->rb().get_arg1(), major,
 		    minor, patch);
 		break;
-	case 3: state->mrb()->get_args("|iii", &major, &minor, &patch); break;
+	case 3: state->rb().get_args("|iii", &major, &minor, &patch); break;
 	default:
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Invalid number of arguments");
 	}
 	if (!in_bitmask(major, 10))
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Major version out of range");
 	if (!in_bitmask(minor, 10))
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Minor version out of range");
 	if (!in_bitmask(patch, 12))
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Patch version out of range");
 	return {
 		static_cast<uint32_t>(major),
@@ -133,7 +131,7 @@ version_to_string(mrb_state *mrb, const mrb_value self_value)
 	const auto self = euler::util::unwrap_data<Version>(mrb, self_value,
 	    &Version::TYPE);
 	const auto str = self->to_string();
-	return state->mrb()->str_new_cstr(str.c_str());
+	return state->rb().str_new_cstr(str.c_str());
 }
 
 static mrb_value
@@ -175,9 +173,9 @@ version_set_major(mrb_state *mrb, const mrb_value self_value)
 	const auto self = euler::util::unwrap_data<Version>(mrb, self_value,
 	    &Version::TYPE);
 	mrb_int major;
-	state->mrb()->get_args("i", &major);
+	state->rb().get_args("i", &major);
 	if (!in_bitmask(major, 10))
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Major version out of range");
 	self->set_major(static_cast<uint32_t>(major));
 	return mrb_nil_value();
@@ -190,9 +188,9 @@ version_set_minor(mrb_state *mrb, const mrb_value self_value)
 	const auto self = euler::util::unwrap_data<Version>(mrb, self_value,
 	    &Version::TYPE);
 	mrb_int minor;
-	state->mrb()->get_args("i", &minor);
+	state->rb().get_args("i", &minor);
 	if (!in_bitmask(minor, 10))
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Minor version out of range");
 	self->set_minor(static_cast<uint32_t>(minor));
 	return mrb_nil_value();
@@ -205,9 +203,9 @@ version_set_patch(mrb_state *mrb, const mrb_value self_value)
 	const auto self = euler::util::unwrap_data<Version>(mrb, self_value,
 	    &Version::TYPE);
 	mrb_int patch;
-	state->mrb()->get_args("i", &patch);
+	state->rb().get_args("i", &patch);
 	if (!in_bitmask(patch, 12))
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Patch version out of range");
 	self->set_patch(static_cast<uint32_t>(patch));
 	return mrb_nil_value();
@@ -216,29 +214,29 @@ version_set_patch(mrb_state *mrb, const mrb_value self_value)
 RClass *
 Version::init(const Reference<State> &state, RClass *mod, RClass *)
 {
-	auto version = state->mrb()->define_class_under(mod, "Version",
+	auto version = state->rb().define_class_under(mod, "Version",
 	    state->object_class());
 	MRB_SET_INSTANCE_TT(version, MRB_TT_DATA);
 	state->modules().util.version = version;
-	state->mrb()->define_class_method(version, "allocate", version_allocate,
+	state->rb().define_class_method(version, "allocate", version_allocate,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(version, "initialize", version_initialize,
+	state->rb().define_method(version, "initialize", version_initialize,
 	    MRB_ARGS_ANY());
-	state->mrb()->define_method(version, "to_s", version_to_string,
+	state->rb().define_method(version, "to_s", version_to_string,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(version, "to_i", version_to_int,
+	state->rb().define_method(version, "to_i", version_to_int,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(version, "major", version_major,
+	state->rb().define_method(version, "major", version_major,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(version, "minor", version_minor,
+	state->rb().define_method(version, "minor", version_minor,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(version, "patch", version_patch,
+	state->rb().define_method(version, "patch", version_patch,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(version, "major=", version_set_major,
+	state->rb().define_method(version, "major=", version_set_major,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(version, "minor=", version_set_minor,
+	state->rb().define_method(version, "minor=", version_set_minor,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(version, "patch=", version_set_patch,
+	state->rb().define_method(version, "patch=", version_set_patch,
 	    MRB_ARGS_REQ(1));
 	return version;
 }
@@ -258,7 +256,28 @@ Version::to_vulkan() const
 }
 
 Version
-euler::util::version()
+Version::parse(std::string_view str)
+{
+	const char *p = str.data();
+	if (p[0] == 'v') ++p;
+	uint32_t major = 0, minor = 0, patch = 0;
+	std::vector<std::string_view> parts;
+	for (const char *start = p; *p != '\0'; ++p) {
+		if (p[0] != '.') continue;
+		parts.emplace_back(start, p - start);
+		start = p + 1;
+	}
+	switch (parts.size()) {
+	case 3: patch = std::stoul(std::string(parts[2])); [[fallthrough]];
+	case 2: minor = std::stoul(std::string(parts[1])); [[fallthrough]];
+	case 1: major = std::stoul(std::string(parts[0])); break;
+	default: throw std::invalid_argument("Invalid version string format");
+	}
+	return Version(major, minor, patch);
+}
+
+Version
+euler::util::engine_version()
 {
 	return VERSION;
 }

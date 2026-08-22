@@ -2,8 +2,13 @@
 
 #include "euler/app/native/state.h"
 
+#include <fstream>
+
 #include <SDL3/SDL_timer.h>
 
+#include <nlohmann/json.hpp>
+
+#include "SDL3/SDL_oldnames.h"
 #include "euler/graphics/image_loader.h"
 #include "euler/vulkan/window.h"
 
@@ -24,6 +29,14 @@ static constexpr euler::util::Version ENGINE_VERSION(ENGINE_VERSION_MAJOR,
 
 using euler::app::native::State;
 
+const mrb_data_type State::TYPE = {
+	.struct_name = "Euler::App::State",
+	.dfree = [](mrb_state *, void *) {
+		/* do nothing, if mrb is being destroyed than our top level
+		 * state is too */
+	}
+};
+
 euler::util::Reference<State>
 State::get(const mrb_state *mrb)
 {
@@ -31,7 +44,13 @@ State::get(const mrb_state *mrb)
 	return static_cast<State *>(st.get());
 }
 
-State::State() { _mrb = util::make_reference<RubyState>(); }
+State::State()
+{
+	Logger::global_init();
+	vulkan::Renderer::global_init();
+}
+
+State::~State() = default;
 
 State::Runtime
 State::runtime() const
@@ -39,16 +58,22 @@ State::runtime() const
 	return Runtime::Native;
 }
 
-euler::util::Reference<euler::util::RubyState>
-State::mrb() const
+const euler::util::RubyState &
+State::rb() const
 {
-	return _mrb;
+	return _rb;
+}
+
+euler::util::RubyState &
+State::rb()
+{
+	return _rb;
 }
 
 RClass *
 State::object_class() const
 {
-	return _mrb->mrb()->object_class;
+	return _rb.mrb()->object_class;
 }
 
 euler::util::Reference<euler::util::Logger>
@@ -82,17 +107,16 @@ State::title() const
 }
 
 bool
-State::initialize(const util::Config &config)
+State::initialize(const std::string_view progname, const util::Config &config)
 {
 	static constexpr vulkan::Window::Flags flags = {};
-	_progname = config.progname;
-	_title = config.title;
-	_logger
-	    = util::make_reference<Logger>("euler", "engine", config.severity);
+	_progname = progname;
+	if (config.title.has_value()) _title = config.title.value();
+	_logger = util::make_reference<Logger>("euler", "engine",
+	    config.severity.value_or(Logger::DEFAULT_SEVERITY));
 	_renderer
 	    = util::make_reference<vulkan::Renderer>(util::Reference(this));
-	_window = util::make_reference<vulkan::Window>(_renderer,
-	    _title.c_str(), 800, 600, flags);
+	_window = _renderer->create_window(_title.c_str(), 800, 600, flags);
 	return true;
 }
 
@@ -112,14 +136,13 @@ State::preferred_gpu() const
 bool
 State::loop(int &exit_code)
 {
-	(void)exit_code;
+	SDL_Event e;
+	if (SDL_PollEvent(&e)) {
+		if (e.type == SDL_EVENT_QUIT) {
+			exit_code = EXIT_SUCCESS;
+			return false;
+		}
+	}
+	_renderer->draw();
 	return true;
-}
-
-euler::util::Config
-euler::app::native::parse_config(int, const char **)
-{
-	util::Config config;
-	/* TODO: parse command line arguments */
-	return config;
 }

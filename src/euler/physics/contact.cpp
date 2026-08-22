@@ -81,17 +81,17 @@ mrb_value
 Contact::HitEvent::wrap(mrb_state *mrb)
 {
 	const auto state = util::State::get(mrb);
-	const mrb_value hash = state->mrb()->hash_new_capa(7);
+	const mrb_value hash = state->rb().hash_new_capa(7);
 	const auto shape_a_value = state->wrap(shape_a);
-	state->mrb()->hash_set(hash, "shape_a", shape_a_value);
+	state->rb().hash_set(hash, "shape_a", shape_a_value);
 	const auto shape_b_value = state->wrap(shape_b);
-	state->mrb()->hash_set(hash, "shape_b", shape_b_value);
+	state->rb().hash_set(hash, "shape_b", shape_b_value);
 	const auto contact_value = state->wrap(contact);
-	state->mrb()->hash_set(hash, "contact", contact_value);
-	state->mrb()->hash_set(hash, "point", b2_vec_to_value(mrb, point));
-	state->mrb()->hash_set(hash, "normal", b2_vec_to_value(mrb, normal));
-	state->mrb()->hash_set(hash, "approach_speed",
-	    state->mrb()->float_value(approach_speed));
+	state->rb().hash_set(hash, "contact", contact_value);
+	state->rb().hash_set(hash, "point", b2_vec_to_value(mrb, point));
+	state->rb().hash_set(hash, "normal", b2_vec_to_value(mrb, normal));
+	state->rb().hash_set(hash, "approach_speed",
+	    state->rb().float_value(approach_speed));
 	return hash;
 }
 
@@ -108,27 +108,27 @@ static mrb_value
 manifold_point_to_value(mrb_state *mrb, const b2ManifoldPoint &mp)
 {
 	const auto state = euler::util::State::get(mrb);
-	auto hash = state->mrb()->hash_new_capa(9);
-	state->mrb()->hash_set(hash, "point",
+	auto hash = state->rb().hash_new_capa(9);
+	state->rb().hash_set(hash, "point",
 	    euler::physics::b2_vec_to_value(mrb, mp.point));
-	auto anchors = state->mrb()->ary_new_capa(2);
-	state->mrb()->ary_push(anchors,
+	auto anchors = state->rb().ary_new_capa(2);
+	state->rb().ary_push(anchors,
 	    euler::physics::b2_vec_to_value(mrb, mp.anchorA));
-	state->mrb()->ary_push(anchors,
+	state->rb().ary_push(anchors,
 	    euler::physics::b2_vec_to_value(mrb, mp.anchorB));
-	state->mrb()->hash_set(hash, "anchors", anchors);
-	state->mrb()->hash_set(hash, "separation",
-	    state->mrb()->float_value(mp.separation));
-	state->mrb()->hash_set(hash, "normal_impulse",
-	    state->mrb()->float_value(mp.normalImpulse));
-	state->mrb()->hash_set(hash, "tangent_impulse",
-	    state->mrb()->float_value(mp.tangentImpulse));
-	state->mrb()->hash_set(hash, "total_normal_impulse",
-	    state->mrb()->float_value(mp.totalNormalImpulse));
-	state->mrb()->hash_set(hash, "normal_velocity",
-	    state->mrb()->float_value(mp.normalVelocity));
-	state->mrb()->hash_set(hash, "id", mrb_fixnum_value(mp.id));
-	state->mrb()->hash_set(hash, "persisted", mrb_bool_value(mp.persisted));
+	state->rb().hash_set(hash, "anchors", anchors);
+	state->rb().hash_set(hash, "separation",
+	    state->rb().float_value(mp.separation));
+	state->rb().hash_set(hash, "normal_impulse",
+	    state->rb().float_value(mp.normalImpulse));
+	state->rb().hash_set(hash, "tangent_impulse",
+	    state->rb().float_value(mp.tangentImpulse));
+	state->rb().hash_set(hash, "total_normal_impulse",
+	    state->rb().float_value(mp.totalNormalImpulse));
+	state->rb().hash_set(hash, "normal_velocity",
+	    state->rb().float_value(mp.normalVelocity));
+	state->rb().hash_set(hash, "id", mrb_fixnum_value(mp.id));
+	state->rb().hash_set(hash, "persisted", mrb_bool_value(mp.persisted));
 	return hash;
 }
 
@@ -136,18 +136,18 @@ static mrb_value
 manifold_to_value(mrb_state *mrb, const b2Manifold &manifold)
 {
 	const auto state = euler::util::State::get(mrb);
-	mrb_value hash = state->mrb()->hash_new();
-	state->mrb()->hash_set(hash, "normal",
+	mrb_value hash = state->rb().hash_new();
+	state->rb().hash_set(hash, "normal",
 	    euler::physics::b2_vec_to_value(mrb, manifold.normal));
-	state->mrb()->hash_set(hash, "rolling_impulse",
-	    state->mrb()->float_value(manifold.rollingImpulse));
-	const auto points = state->mrb()->ary_new_capa(manifold.pointCount);
+	state->rb().hash_set(hash, "rolling_impulse",
+	    state->rb().float_value(manifold.rollingImpulse));
+	const auto points = state->rb().ary_new_capa(manifold.pointCount);
 	for (int i = 0; i < manifold.pointCount; ++i) {
 		const b2ManifoldPoint &mp = manifold.points[i];
 		mrb_value mp_value = manifold_point_to_value(mrb, mp);
-		state->mrb()->ary_push(points, mp_value);
+		state->rb().ary_push(points, mp_value);
 	}
-	state->mrb()->hash_set(hash, "points", points);
+	state->rb().hash_set(hash, "points", points);
 	return hash;
 }
 
@@ -155,18 +155,18 @@ mrb_value
 Contact::Data::wrap(mrb_state *mrb)
 {
 	const auto state = util::State::get(mrb);
-	const mrb_value hash = state->mrb()->hash_new();
+	const mrb_value hash = state->rb().hash_new();
 	// contact
 	const auto contact_value = state->wrap(contact);
-	state->mrb()->hash_set(hash, "contact", contact_value);
+	state->rb().hash_set(hash, "contact", contact_value);
 	const auto shape_a_value = state->wrap(shape_a);
 	const auto shape_b_value = state->wrap(shape_b);
-	mrb_value shapes_array = state->mrb()->ary_new_capa(2);
-	state->mrb()->ary_push(shapes_array, shape_a_value);
-	state->mrb()->ary_push(shapes_array, shape_b_value);
-	state->mrb()->hash_set(hash, "shapes", shapes_array);
+	mrb_value shapes_array = state->rb().ary_new_capa(2);
+	state->rb().ary_push(shapes_array, shape_a_value);
+	state->rb().ary_push(shapes_array, shape_b_value);
+	state->rb().hash_set(hash, "shapes", shapes_array);
 	const auto manifold_value = manifold_to_value(mrb, manifold);
-	state->mrb()->hash_set(hash, "manifold", manifold_value);
+	state->rb().hash_set(hash, "manifold", manifold_value);
 	return hash;
 }
 
@@ -185,13 +185,13 @@ mrb_value
 Contact::Event::wrap(mrb_state *mrb)
 {
 	const auto state = util::State::get(mrb);
-	const mrb_value hash = state->mrb()->hash_new_capa(3);
+	const mrb_value hash = state->rb().hash_new_capa(3);
 	const auto shape_a_value = state->wrap(shape_a);
-	state->mrb()->hash_set(hash, "shape_a", shape_a_value);
+	state->rb().hash_set(hash, "shape_a", shape_a_value);
 	const auto shape_b_value = state->wrap(shape_b);
-	state->mrb()->hash_set(hash, "shape_b", shape_b_value);
+	state->rb().hash_set(hash, "shape_b", shape_b_value);
 	const auto contact_value = state->wrap(contact);
-	state->mrb()->hash_set(hash, "contact", contact_value);
+	state->rb().hash_set(hash, "contact", contact_value);
 	return hash;
 }
 
@@ -246,25 +246,25 @@ Contact::Events::wrap(mrb_state *mrb)
 {
 	const auto state = util::State::get(mrb);
 	const mrb_value begin_ary
-	    = state->mrb()->ary_new_capa(start_events.size());
+	    = state->rb().ary_new_capa(start_events.size());
 	for (auto &event : start_events) {
 		const mrb_value event_value = event.wrap(mrb);
-		state->mrb()->ary_push(begin_ary, event_value);
+		state->rb().ary_push(begin_ary, event_value);
 	}
-	const mrb_value end_ary = state->mrb()->ary_new_capa(end_events.size());
+	const mrb_value end_ary = state->rb().ary_new_capa(end_events.size());
 	for (auto &event : end_events) {
 		const mrb_value event_value = event.wrap(mrb);
-		state->mrb()->ary_push(end_ary, event_value);
+		state->rb().ary_push(end_ary, event_value);
 	}
-	const mrb_value hit_ary = state->mrb()->ary_new_capa(hit_events.size());
+	const mrb_value hit_ary = state->rb().ary_new_capa(hit_events.size());
 	for (auto &event : hit_events) {
 		const mrb_value event_value = event.wrap(mrb);
-		state->mrb()->ary_push(hit_ary, event_value);
+		state->rb().ary_push(hit_ary, event_value);
 	}
-	const mrb_value result = state->mrb()->hash_new();
-	state->mrb()->hash_set(result, "begin", begin_ary);
-	state->mrb()->hash_set(result, "end", end_ary);
-	state->mrb()->hash_set(result, "hit", hit_ary);
+	const mrb_value result = state->rb().hash_new();
+	state->rb().hash_set(result, "begin", begin_ary);
+	state->rb().hash_set(result, "end", end_ary);
+	state->rb().hash_set(result, "hit", hit_ary);
 	return result;
 }
 

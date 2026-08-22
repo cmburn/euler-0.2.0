@@ -23,7 +23,7 @@ using euler::physics::Body;
 	mrb_sym kw_syms[KW_COUNT];                                             \
 	for (size_t i = 0; i < KW_COUNT; ++i) {                                \
 		const size_t len = strlen(KW_NAMES[i]);                        \
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);    \
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);    \
 	}                                                                      \
 	mrb_value kw_values[KW_COUNT];                                         \
 	euler::physics::init_kw_values(kw_values);                             \
@@ -46,7 +46,7 @@ body_angular_damping(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const float angular_damping = body->angular_damping();
-	return state->mrb()->float_value(angular_damping);
+	return state->rb().float_value(angular_damping);
 }
 
 /**
@@ -61,7 +61,7 @@ body_set_angular_damping(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	body->set_angular_damping(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -77,7 +77,7 @@ body_angular_velocity(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const float angular_velocity = body->angular_velocity();
-	return state->mrb()->float_value(angular_velocity);
+	return state->rb().float_value(angular_velocity);
 }
 
 /**
@@ -92,7 +92,7 @@ body_set_angular_velocity(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	body->set_angular_velocity(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -113,7 +113,7 @@ body_apply_angular_impulse(mrb_state *mrb, const mrb_value self)
 	const auto body = Body::unwrap(mrb, self);
 	mrb_float impulse;
 	mrb_bool wake = false;
-	state->mrb()->get_args("f:", &impulse, &kwargs);
+	state->rb().get_args("f:", &impulse, &kwargs);
 	if (!mrb_undef_p(kw_values[WAKE])) wake = mrb_bool(kw_values[WAKE]);
 	body->apply_angular_impulse(static_cast<float>(impulse), wake);
 	return mrb_nil_value();
@@ -141,7 +141,7 @@ body_apply_force(mrb_state *mrb, const mrb_value self)
 	mrb_bool wake = false;
 	mrb_value force_value;
 	mrb_value point_value;
-	state->mrb()->get_args("oo:", &force_value, &point_value, &kwargs);
+	state->rb().get_args("oo:", &force_value, &point_value, &kwargs);
 	if (!mrb_undef_p(kw_values[WAKE])) wake = mrb_bool(kw_values[WAKE]);
 	const b2Vec2 force = euler::physics::value_to_b2_vec(mrb, force_value);
 	const b2Vec2 point = euler::physics::value_to_b2_vec(mrb, point_value);
@@ -165,7 +165,7 @@ body_apply_force_to_center(mrb_state *mrb, const mrb_value self)
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value force_value;
 	mrb_bool wake = false;
-	state->mrb()->get_args("o:", &force_value, &kwargs);
+	state->rb().get_args("o:", &force_value, &kwargs);
 	if (!mrb_undef_p(kw_values[WAKE])) wake = mrb_bool(kw_values[WAKE]);
 	const b2Vec2 force = euler::physics::value_to_b2_vec(mrb, force_value);
 	body->apply_force_to_center(force, wake);
@@ -194,7 +194,7 @@ body_apply_linear_impulse(mrb_state *mrb, mrb_value self)
 	mrb_value impulse_value;
 	mrb_value point_value;
 	mrb_bool wake = false;
-	state->mrb()->get_args("oo:", &impulse_value, &point_value, &kwargs);
+	state->rb().get_args("oo:", &impulse_value, &point_value, &kwargs);
 	if (!mrb_undef_p(kw_values[WAKE])) wake = mrb_bool(kw_values[WAKE]);
 	const b2Vec2 impulse
 	    = euler::physics::value_to_b2_vec(mrb, impulse_value);
@@ -220,7 +220,7 @@ body_apply_linear_impulse_to_center(mrb_state *mrb, mrb_value self)
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value impulse_value;
 	mrb_bool wake = false;
-	state->mrb()->get_args("o:", &impulse_value, &kwargs);
+	state->rb().get_args("o:", &impulse_value, &kwargs);
 	if (!mrb_undef_p(kw_values[WAKE])) wake = mrb_bool(kw_values[WAKE]);
 	const b2Vec2 impulse
 	    = euler::physics::value_to_b2_vec(mrb, impulse_value);
@@ -265,7 +265,7 @@ body_apply_torque(mrb_state *mrb, mrb_value self)
 	const auto body = Body::unwrap(mrb, self);
 	mrb_float torque;
 	mrb_bool wake = false;
-	state->mrb()->get_args("f|b", &torque, &kwargs);
+	state->rb().get_args("f|b", &torque, &kwargs);
 	if (!mrb_undef_p(kw_values[WAKE])) wake = mrb_bool(kw_values[WAKE]);
 	body->apply_torque(static_cast<float>(torque), wake);
 	return mrb_nil_value();
@@ -306,9 +306,9 @@ body_compute_aabb(mrb_state *mrb, mrb_value self)
 	    = euler::physics::b2_vec_to_value(mrb, aabb.upperBound);
 	const mrb_value lower
 	    = euler::physics::b2_vec_to_value(mrb, aabb.lowerBound);
-	const mrb_value out = state->mrb()->hash_new_capa(2);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(upper), upper);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(lower), lower);
+	const mrb_value out = state->rb().hash_new_capa(2);
+	state->rb().hash_set(out, EULER_SYM_VAL(upper), upper);
+	state->rb().hash_set(out, EULER_SYM_VAL(lower), lower);
 	return out;
 }
 
@@ -358,10 +358,10 @@ body_contact_data(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const auto data = body->contact_data();
-	const mrb_value out = state->mrb()->ary_new_capa(data.size());
+	const mrb_value out = state->rb().ary_new_capa(data.size());
 	for (const auto &entry : data) {
 		auto cd = euler::physics::Contact::Data::from_b2(entry);
-		state->mrb()->ary_push(out, cd.wrap(mrb));
+		state->rb().ary_push(out, cd.wrap(mrb));
 	}
 	return out;
 }
@@ -408,7 +408,7 @@ body_enable_contact_events(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_bool enable;
-	state->mrb()->get_args("b", &enable);
+	state->rb().get_args("b", &enable);
 	body->enable_contact_events(enable);
 	return mrb_nil_value();
 }
@@ -425,7 +425,7 @@ body_enable_hit_events(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_bool enable;
-	state->mrb()->get_args("b", &enable);
+	state->rb().get_args("b", &enable);
 	body->enable_hit_events(enable);
 	return mrb_nil_value();
 }
@@ -447,7 +447,7 @@ body_set_sleep_enabled(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_bool enable;
-	state->mrb()->get_args("b", &enable);
+	state->rb().get_args("b", &enable);
 	body->set_sleep_enabled(enable);
 	return mrb_nil_value();
 }
@@ -464,7 +464,7 @@ body_set_gravity_scale(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	body->set_gravity_scale(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -479,7 +479,7 @@ body_gravity_scale(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const float gravity_scale = body->gravity_scale();
-	return state->mrb()->float_value(gravity_scale);
+	return state->rb().float_value(gravity_scale);
 }
 
 /**
@@ -509,7 +509,7 @@ body_set_awake(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_bool awake;
-	state->mrb()->get_args("b", &awake);
+	state->rb().get_args("b", &awake);
 	body->set_awake(awake);
 	return mrb_nil_value();
 }
@@ -543,7 +543,7 @@ body_set_bullet(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_bool flag;
-	state->mrb()->get_args("b", &flag);
+	state->rb().get_args("b", &flag);
 	body->set_bullet(flag);
 	return mrb_nil_value();
 }
@@ -570,7 +570,7 @@ body_set_enabled(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_bool enable;
-	state->mrb()->get_args("b", &enable);
+	state->rb().get_args("b", &enable);
 	if (enable) body->enable();
 	else body->disable();
 	return mrb_nil_value();
@@ -618,9 +618,9 @@ body_joints(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	auto joints = body->joints();
-	const mrb_value out = state->mrb()->ary_new_capa(joints.size());
+	const mrb_value out = state->rb().ary_new_capa(joints.size());
 	for (const auto &joint : joints)
-		state->mrb()->ary_push(out, joint->wrap(state));
+		state->rb().ary_push(out, joint->wrap(state));
 	return out;
 }
 
@@ -635,7 +635,7 @@ body_linear_damping(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const float linear_damping = body->linear_damping();
-	return state->mrb()->float_value(linear_damping);
+	return state->rb().float_value(linear_damping);
 }
 
 /**
@@ -650,7 +650,7 @@ body_set_linear_damping(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	body->set_linear_damping(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -681,7 +681,7 @@ body_set_linear_velocity(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value value;
-	state->mrb()->get_args("o", &value);
+	state->rb().get_args("o", &value);
 	const b2Vec2 linear_velocity
 	    = euler::physics::value_to_b2_vec(mrb, value);
 	body->set_linear_velocity(linear_velocity);
@@ -714,7 +714,7 @@ body_local_point(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value point_value;
-	state->mrb()->get_args("o", &point_value);
+	state->rb().get_args("o", &point_value);
 	const b2Vec2 point = euler::physics::value_to_b2_vec(mrb, point_value);
 	const b2Vec2 local_point = body->local_point(point);
 	return euler::physics::b2_vec_to_value(mrb, local_point);
@@ -731,7 +731,7 @@ body_local_point_velocity(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value point_value;
-	state->mrb()->get_args("o", &point_value);
+	state->rb().get_args("o", &point_value);
 	const b2Vec2 point = euler::physics::value_to_b2_vec(mrb, point_value);
 	const b2Vec2 local_point_velocity = body->local_point_velocity(point);
 	return euler::physics::b2_vec_to_value(mrb, local_point_velocity);
@@ -749,7 +749,7 @@ body_local_vector(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value vector_value;
-	state->mrb()->get_args("o", &vector_value);
+	state->rb().get_args("o", &vector_value);
 	const b2Vec2 vector
 	    = euler::physics::value_to_b2_vec(mrb, vector_value);
 	const b2Vec2 local_vector = body->local_vector(vector);
@@ -767,7 +767,7 @@ body_mass(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const float mass = body->mass();
-	return state->mrb()->float_value(mass);
+	return state->rb().float_value(mass);
 }
 
 /**
@@ -788,13 +788,13 @@ body_mass_data(mrb_state *mrb, mrb_value self)
 	const b2MassData md = body->mass_data();
 	const mrb_value center
 	    = euler::physics::b2_vec_to_value(mrb, md.center);
-	const mrb_value out = state->mrb()->hash_new_capa(3);
-	const mrb_value mass = state->mrb()->float_value(md.mass);
+	const mrb_value out = state->rb().hash_new_capa(3);
+	const mrb_value mass = state->rb().float_value(md.mass);
 	const mrb_value inertia
-	    = state->mrb()->float_value(md.rotationalInertia);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(center), center);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(mass), mass);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(rotational_inertia), inertia);
+	    = state->rb().float_value(md.rotationalInertia);
+	state->rb().hash_set(out, EULER_SYM_VAL(center), center);
+	state->rb().hash_set(out, EULER_SYM_VAL(mass), mass);
+	state->rb().hash_set(out, EULER_SYM_VAL(rotational_inertia), inertia);
 	return out;
 }
 
@@ -818,16 +818,16 @@ body_set_mass_data(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value mdh;
-	state->mrb()->get_args("o", &mdh);
+	state->rb().get_args("o", &mdh);
 	b2MassData md;
 	const mrb_value center_value
-	    = state->mrb()->hash_get(mdh, EULER_SYM_VAL(center));
+	    = state->rb().hash_get(mdh, EULER_SYM_VAL(center));
 	md.center = euler::physics::value_to_b2_vec(mrb, center_value);
 	const mrb_value mass_value
-	    = state->mrb()->hash_get(mdh, EULER_SYM_VAL(mass));
+	    = state->rb().hash_get(mdh, EULER_SYM_VAL(mass));
 	md.mass = static_cast<float>(mrb_float(mass_value));
 	const mrb_value inertia_value
-	    = state->mrb()->hash_get(mdh, EULER_SYM_VAL(rotational_inertia));
+	    = state->rb().hash_get(mdh, EULER_SYM_VAL(rotational_inertia));
 	md.rotationalInertia = static_cast<float>(mrb_float(inertia_value));
 	body->set_mass_data(md);
 	return mrb_nil_value();
@@ -848,12 +848,12 @@ body_motion_locks(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const b2MotionLocks locks = body->motion_locks();
-	const mrb_value out = state->mrb()->hash_new_capa(3);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(linear_x),
+	const mrb_value out = state->rb().hash_new_capa(3);
+	state->rb().hash_set(out, EULER_SYM_VAL(linear_x),
 	    mrb_bool_value(locks.linearX));
-	state->mrb()->hash_set(out, EULER_SYM_VAL(linear_y),
+	state->rb().hash_set(out, EULER_SYM_VAL(linear_y),
 	    mrb_bool_value(locks.linearY));
-	state->mrb()->hash_set(out, EULER_SYM_VAL(angular_z),
+	state->rb().hash_set(out, EULER_SYM_VAL(angular_z),
 	    mrb_bool_value(locks.angularZ));
 	return out;
 }
@@ -874,16 +874,16 @@ body_set_motion_locks(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value locks_value;
-	state->mrb()->get_args("H", &locks_value);
+	state->rb().get_args("H", &locks_value);
 	b2MotionLocks locks = {};
 	const mrb_value linear_x_value
-	    = state->mrb()->hash_get(locks_value, EULER_SYM_VAL(linear_x));
+	    = state->rb().hash_get(locks_value, EULER_SYM_VAL(linear_x));
 	locks.linearX = mrb_bool(linear_x_value);
 	const mrb_value linear_y_value
-	    = state->mrb()->hash_get(locks_value, EULER_SYM_VAL(linear_y));
+	    = state->rb().hash_get(locks_value, EULER_SYM_VAL(linear_y));
 	locks.linearY = mrb_bool(linear_y_value);
 	const mrb_value angular_z_value
-	    = state->mrb()->hash_get(locks_value, EULER_SYM_VAL(angular_z));
+	    = state->rb().hash_get(locks_value, EULER_SYM_VAL(angular_z));
 	locks.angularZ = mrb_bool(angular_z_value);
 	body->set_motion_locks(locks);
 	return mrb_nil_value();
@@ -900,7 +900,7 @@ body_name(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const char *name = body->name();
-	return state->mrb()->str_new_cstr(name);
+	return state->rb().str_new_cstr(name);
 }
 
 /**
@@ -915,7 +915,7 @@ body_set_name(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const char *name;
-	state->mrb()->get_args("z", &name);
+	state->rb().get_args("z", &name);
 	body->set_name(name);
 	return mrb_nil_value();
 }
@@ -959,7 +959,7 @@ body_rotational_inertia(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const float inertia = body->rotational_inertia();
-	return state->mrb()->float_value(inertia);
+	return state->rb().float_value(inertia);
 }
 
 /**
@@ -983,7 +983,7 @@ body_target_transform(mrb_state *mrb, mrb_value self)
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value tform_value;
 	mrb_float step = 1.0;
-	state->mrb()->get_args("o|f:", &tform_value, &step, &kwargs);
+	state->rb().get_args("o|f:", &tform_value, &step, &kwargs);
 	bool wake = mrb_undef_p(kw_values[0]) ? false : mrb_bool(kw_values[0]);
 	const b2Transform tform
 	    = euler::physics::value_to_b2_transform(mrb, tform_value);
@@ -1003,9 +1003,9 @@ body_shapes(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const auto shapes = body->shapes();
-	const mrb_value out = state->mrb()->ary_new_capa(shapes.size());
+	const mrb_value out = state->rb().ary_new_capa(shapes.size());
 	for (auto shape : shapes)
-		state->mrb()->ary_push(out, state->wrap(shape));
+		state->rb().ary_push(out, state->wrap(shape));
 	return out;
 }
 
@@ -1020,7 +1020,7 @@ body_sleep_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	const float sleep_threshold = body->sleep_threshold();
-	return state->mrb()->float_value(sleep_threshold);
+	return state->rb().float_value(sleep_threshold);
 }
 
 /**
@@ -1035,7 +1035,7 @@ body_set_sleep_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	body->set_sleep_threshold(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -1072,7 +1072,7 @@ body_set_transform(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value tform_value;
-	state->mrb()->get_args("o", &tform_value);
+	state->rb().get_args("o", &tform_value);
 	const b2Transform tform
 	    = euler::physics::value_to_b2_transform(mrb, tform_value);
 	body->set_transform(tform.p, tform.q);
@@ -1094,7 +1094,7 @@ body_type(mrb_state *mrb, mrb_value self)
 	case b2_kinematicBody: return EULER_SYM_VAL(kinematic);
 	case b2_dynamicBody: return EULER_SYM_VAL(dynamic);
 	default:
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "unknown body type");
 		std::unreachable();
 	}
@@ -1105,13 +1105,13 @@ sym_to_body_type(mrb_state *mrb, const mrb_sym type_sym)
 {
 	const auto state = euler::util::State::get(mrb);
 	const mrb_value type = mrb_symbol_value(type_sym);
-	if (state->mrb()->equal(type, EULER_SYM_VAL(static)))
+	if (state->rb().equal(type, EULER_SYM_VAL(static)))
 		return b2_staticBody;
-	if (state->mrb()->equal(type, EULER_SYM_VAL(kinematic)))
+	if (state->rb().equal(type, EULER_SYM_VAL(kinematic)))
 		return b2_kinematicBody;
-	if (state->mrb()->equal(type, EULER_SYM_VAL(dynamic)))
+	if (state->rb().equal(type, EULER_SYM_VAL(dynamic)))
 		return b2_dynamicBody;
-	state->mrb()->raise(state->mrb()->argument_error(),
+	state->rb().raise(state->rb().argument_error(),
 	    "invalid body type");
 	std::unreachable();
 }
@@ -1129,7 +1129,7 @@ body_set_type(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_sym type_sym;
-	state->mrb()->get_args("n", &type_sym);
+	state->rb().get_args("n", &type_sym);
 	const b2BodyType type = sym_to_body_type(mrb, type_sym);
 	body->set_type(type);
 	return mrb_nil_value();
@@ -1187,7 +1187,7 @@ body_world_point(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value point_value;
-	state->mrb()->get_args("o", &point_value);
+	state->rb().get_args("o", &point_value);
 	const b2Vec2 point = euler::physics::value_to_b2_vec(mrb, point_value);
 	const b2Vec2 world_point = body->world_point(point);
 	return euler::physics::b2_vec_to_value(mrb, world_point);
@@ -1206,7 +1206,7 @@ body_world_point_velocity(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value point_value;
-	state->mrb()->get_args("o", &point_value);
+	state->rb().get_args("o", &point_value);
 	const b2Vec2 point = euler::physics::value_to_b2_vec(mrb, point_value);
 	const b2Vec2 world_point_velocity = body->world_point_velocity(point);
 	return euler::physics::b2_vec_to_value(mrb, world_point_velocity);
@@ -1224,7 +1224,7 @@ body_world_vector(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto body = Body::unwrap(mrb, self);
 	mrb_value vector_value;
-	state->mrb()->get_args("o", &vector_value);
+	state->rb().get_args("o", &vector_value);
 	const b2Vec2 vector
 	    = euler::physics::value_to_b2_vec(mrb, vector_value);
 	const b2Vec2 world_vector = body->world_vector(vector);
@@ -1369,16 +1369,16 @@ b2BodyType
 Body::parse_type(mrb_state *mrb, mrb_value value)
 {
 	auto state = euler::util::State::get(mrb);
-	if (state->mrb()->equal(value, EULER_SYM_VAL(static))) {
+	if (state->rb().equal(value, EULER_SYM_VAL(static))) {
 		return b2_staticBody;
 	}
-	if (state->mrb()->equal(value, EULER_SYM_VAL(kinematic))) {
+	if (state->rb().equal(value, EULER_SYM_VAL(kinematic))) {
 		return b2_kinematicBody;
 	}
-	if (state->mrb()->equal(value, EULER_SYM_VAL(dynamic))) {
+	if (state->rb().equal(value, EULER_SYM_VAL(dynamic))) {
 		return b2_dynamicBody;
 	}
-	state->mrb()->raise(state->mrb()->argument_error(),
+	state->rb().raise(state->rb().argument_error(),
 	    "invalid body type");
 	std::unreachable();
 }
@@ -1387,12 +1387,12 @@ mrb_value
 Body::MoveEvent::wrap(mrb_state *mrb)
 {
 	const auto state = euler::util::State::get(mrb);
-	const auto hash = state->mrb()->hash_new_capa(3);
+	const auto hash = state->rb().hash_new_capa(3);
 	const auto tform = b2_transform_to_value(mrb, transform);
 	const auto asleep = mrb_bool_value(fell_asleep);
-	state->mrb()->hash_set(hash, EULER_SYM_VAL(transform), tform);
-	state->mrb()->hash_set(hash, EULER_SYM_VAL(body), state->wrap(body));
-	state->mrb()->hash_set(hash, EULER_SYM_VAL(fell_asleep), asleep);
+	state->rb().hash_set(hash, EULER_SYM_VAL(transform), tform);
+	state->rb().hash_set(hash, EULER_SYM_VAL(body), state->wrap(body));
+	state->rb().hash_set(hash, EULER_SYM_VAL(fell_asleep), asleep);
 	return hash;
 }
 

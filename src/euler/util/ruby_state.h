@@ -22,9 +22,11 @@ class Error;
 /* Note that the implementation of this interface must convert ruby exceptions
  * into C++ exceptions, if mRuby is not built with C++ exceptions enabled (such
  * as in DragonRuby builds) */
-class RubyState : public Object {
+class RubyState {
 public:
-	virtual mrb_state *mrb() const = 0;
+	virtual ~RubyState() = default;
+	virtual const mrb_state *mrb() const = 0;
+	virtual mrb_state *mrb() = 0;
 	virtual void raise_on_error() = 0;
 	[[noreturn]] virtual void raise(RClass *c, const char *msg) = 0;
 	[[noreturn]] virtual void raisef(RClass *c, const char *fmt, ...) = 0;

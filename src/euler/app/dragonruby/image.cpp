@@ -2,6 +2,8 @@
 
 #include "euler/app/dragonruby/image.h"
 
+#include <cstdlib>
+
 euler::app::dragonruby::Image::~Image()
 {
 	if (_own_data) free(_data);

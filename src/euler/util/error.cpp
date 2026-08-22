@@ -11,7 +11,7 @@
 using euler::util::Error;
 
 static std::string
-format_message(const euler::util::Reference<euler::util::RubyState> &,
+format_message(const euler::util::RubyState &,
     const std::string &cause, const char *class_name,
     const std::string &backtrace)
 {
@@ -25,7 +25,7 @@ format_message(const euler::util::Reference<euler::util::RubyState> &,
 
 Error::~Error() = default;
 
-Error::Error(const Reference<RubyState> &state, const std::string &cause,
+Error::Error(RubyState &state, const std::string &cause,
     const char *class_name, const std::optional<std::string_view> &backtrace)
     : _state(state)
     , _cause(cause)
@@ -34,31 +34,30 @@ Error::Error(const Reference<RubyState> &state, const std::string &cause,
 {
 }
 
-Error::Error(const Reference<RubyState> &state, RObject *exc)
+Error::Error(RubyState &state, RObject *exc)
     : _state(state)
 {
-	_cause = state->error_cause(exc);
-	_backtrace = state->error_backtrace(exc);
+	_cause = state.error_cause(exc);
+	_backtrace = state.error_backtrace(exc);
 	_message = format_message(state, _cause,
-	    state->class_name(state->obj_class(mrb_obj_value(exc))),
+	    state.class_name(state.obj_class(mrb_obj_value(exc))),
 	    _backtrace);
 }
 
 RClass *
 Error::exception_class() const
 {
-	return state()->mrb()->eException_class;
+	return state().mrb()->eException_class;
 }
 
 mrb_value
 Error::to_mrb() const
 {
 	const auto exc_class = exception_class();
-	const auto message = state()->str_new_cstr(_message.c_str());
-	return state()->exc_new_str(exc_class, message);
+	const auto message = state().str_new_cstr(_message.c_str());
+	return state().exc_new_str(exc_class, message);
 }
-
-euler::util::Reference<euler::util::RubyState>
+euler::util::RubyState &
 Error::state() const
 {
 	return _state;
@@ -67,115 +66,115 @@ Error::state() const
 RClass *
 euler::util::StandardError::exception_class() const
 {
-	return state()->mrb()->eStandardError_class;
+	return state().mrb()->eStandardError_class;
 }
 
 RClass *
 euler::util::RuntimeError::exception_class() const
 {
-	return state()->runtime_error();
+	return state().runtime_error();
 }
 
 RClass *
 euler::util::TypeError::exception_class() const
 {
-	return state()->type_error();
+	return state().type_error();
 }
 
 RClass *
 euler::util::ZeroDivisionError::exception_class() const
 {
-	return state()->zero_division_error();
+	return state().zero_division_error();
 }
 
 RClass *
 euler::util::IndexError::exception_class() const
 {
-	return state()->index_error();
+	return state().index_error();
 }
 
 RClass *
 euler::util::RangeError::exception_class() const
 {
-	return state()->range_error();
+	return state().range_error();
 }
 
 RClass *
 euler::util::NameError::exception_class() const
 {
-	return state()->name_error();
+	return state().name_error();
 }
 
 RClass *
 euler::util::NoMethodError::exception_class() const
 {
-	return state()->no_method_error();
+	return state().no_method_error();
 }
 
 RClass *
 euler::util::ScriptError::exception_class() const
 {
-	return state()->script_error();
+	return state().script_error();
 }
 
 RClass *
 euler::util::SyntaxError::exception_class() const
 {
-	return state()->syntax_error();
+	return state().syntax_error();
 }
 
 RClass *
 euler::util::LocalJumpError::exception_class() const
 {
-	return state()->local_jump_error();
+	return state().local_jump_error();
 }
 
 RClass *
 euler::util::RegexpError::exception_class() const
 {
-	return state()->regexp_error();
+	return state().regexp_error();
 }
 
 RClass *
 euler::util::FrozenError::exception_class() const
 {
-	return state()->frozen_error();
+	return state().frozen_error();
 }
 
 RClass *
 euler::util::NotImplementedError::exception_class() const
 {
-	return state()->not_implemented_error();
+	return state().not_implemented_error();
 }
 
 RClass *
 euler::util::KeyError::exception_class() const
 {
-	return state()->key_error();
+	return state().key_error();
 }
 
 RClass *
 euler::util::FloatDomainError::exception_class() const
 {
-	return state()->float_domain_error();
+	return state().float_domain_error();
 }
 
 std::string
-euler::util::error_cause(const Reference<RubyState> &state, RObject *exc)
+euler::util::error_cause(RubyState &state, RObject *exc)
 {
-	return state->error_cause(exc);
+	return state.error_cause(exc);
 }
 
 std::string
-euler::util::error_backtrace(const Reference<RubyState> &state, RObject *exc)
+euler::util::error_backtrace(RubyState &state, RObject *exc)
 {
-	return state->error_backtrace(exc);
+	return state.error_backtrace(exc);
 }
 
 void
-euler::util::throw_error(const Reference<RubyState> &state, RObject *exc)
+euler::util::throw_error(RubyState &state, RObject *exc)
 {
-	const auto [kind, is_custom] = state->error_type_info(exc);
+	const auto [kind, is_custom] = state.error_type_info(exc);
 	if (is_custom) {
 		switch (kind) {
 		case Error::Kind::Exception: throw CustomError(state, exc);

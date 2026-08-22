@@ -7,11 +7,11 @@ using euler::util::Logger;
 static Logger::Severity
 severity_from_symbol(mrb_state *mrb, const mrb_sym sym)
 {
-	if (sym == EULER_SYM("debug")) return Logger::Severity::Debug;
-	if (sym == EULER_SYM("info")) return Logger::Severity::Info;
-	if (sym == EULER_SYM("warn")) return Logger::Severity::Warn;
-	if (sym == EULER_SYM("error")) return Logger::Severity::Error;
-	if (sym == EULER_SYM("fatal")) return Logger::Severity::Fatal;
+	if (sym == EULER_SYM(debug)) return Logger::Severity::Debug;
+	if (sym == EULER_SYM(info)) return Logger::Severity::Info;
+	if (sym == EULER_SYM(warn)) return Logger::Severity::Warn;
+	if (sym == EULER_SYM(error)) return Logger::Severity::Error;
+	if (sym == EULER_SYM(fatal)) return Logger::Severity::Fatal;
 	return Logger::Severity::Unknown;
 }
 
@@ -24,7 +24,7 @@ log(mrb_state *mrb, const mrb_value self)
 	mrb_sym severity_sym;
 	const char *msg;
 	mrb_int len;
-	state->mrb()->get_args("ns", &severity_sym, &msg, &len);
+	state->rb().get_args("ns", &severity_sym, &msg, &len);
 	const auto severity = severity_from_symbol(mrb, severity_sym);
 	const std::string_view message(msg, static_cast<std::size_t>(len));
 	logger->log(severity, "{}", message);
@@ -39,7 +39,7 @@ log_severity(mrb_state *mrb, const mrb_value self)
 	const auto logger = Reference<Logger>::unwrap(mrb, self);
 	const auto state = State::get(mrb);
 	const char *msg;
-	state->mrb()->get_args("z", &msg);
+	state->rb().get_args("z", &msg);
 	logger->log(Severity, "{}", msg);
 	return mrb_nil_value();
 }
@@ -47,26 +47,27 @@ log_severity(mrb_state *mrb, const mrb_value self)
 RClass *
 Logger::init(const Reference<State> &state, RClass *mod, RClass *)
 {
-	const auto cls = state->mrb()->define_class_under(mod, "Logger",
+	const auto cls = state->rb().define_class_under(mod, "Logger",
 	    state->object_class());
 	MRB_SET_INSTANCE_TT(cls, MRB_TT_DATA);
-	state->mrb()->define_method(cls, "log", ::log, MRB_ARGS_REQ(2));
-	state->mrb()->define_method(cls, "debug", log_severity<Severity::Debug>,
+	state->rb().define_method(cls, "log", ::log, MRB_ARGS_REQ(2));
+	state->rb().define_method(cls, "debug", log_severity<Severity::Debug>,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(cls, "info", log_severity<Severity::Info>,
+	state->rb().define_method(cls, "info", log_severity<Severity::Info>,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(cls, "warn", log_severity<Severity::Warn>,
+	state->rb().define_method(cls, "warn", log_severity<Severity::Warn>,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(cls, "error", log_severity<Severity::Error>,
+	state->rb().define_method(cls, "error", log_severity<Severity::Error>,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(cls, "fatal", log_severity<Severity::Fatal>,
+	state->rb().define_method(cls, "fatal", log_severity<Severity::Fatal>,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(cls, "unknown",
+	state->rb().define_method(cls, "unknown",
 	    log_severity<Severity::Unknown>, MRB_ARGS_REQ(1));
 	return cls;
 }
+
 Logger::Severity
-Logger::parse_severity(std::string_view str)
+Logger::parse_severity(const std::string_view str)
 {
 	if (str == "debug") return Severity::Debug;
 	if (str == "info") return Severity::Info;
@@ -74,4 +75,17 @@ Logger::parse_severity(std::string_view str)
 	if (str == "error") return Severity::Error;
 	if (str == "fatal") return Severity::Fatal;
 	return Severity::Unknown;
+}
+
+const char *
+Logger::severity_to_string(const Severity level)
+{
+	switch (level) {
+	case Severity::Debug: return "debug";
+	case Severity::Info: return "info";
+	case Severity::Warn: return "warn";
+	case Severity::Error: return "error";
+	case Severity::Fatal: return "fatal";
+	default: return "unknown";
+	}
 }

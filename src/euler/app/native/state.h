@@ -15,12 +15,14 @@
 namespace euler::app::native {
 
 class State : public util::State {
+	BIND_MRUBY_DATA("Euler::App::State", State, app.state);
 public:
 	static util::Reference<State> get(const mrb_state *mrb);
 	State();
-	~State() override = default;
+	~State() override;
 	[[nodiscard]] Runtime runtime() const override;
-	[[nodiscard]] util::Reference<util::RubyState> mrb() const override;
+	[[nodiscard]] const util::RubyState &rb() const override;
+	[[nodiscard]] util::RubyState &rb() override;
 	[[nodiscard]] RClass *object_class() const override;
 	[[nodiscard]] util::Reference<util::Logger> log() const override;
 	[[nodiscard]] tick_t ticks() const override;
@@ -28,7 +30,8 @@ public:
 
 	[[nodiscard]] const std::string &progname() const override;
 	[[nodiscard]] const std::string &title() const override;
-	bool initialize(const util::Config &config) override;
+	[[nodiscard]] bool initialize(std::string_view progname,
+	    const util::Config &config) override;
 	[[nodiscard]] util::Reference<graphics::ImageLoader>
 	image_loader() override;
 	[[nodiscard]] std::optional<uint32_t> preferred_gpu() const override;
@@ -36,7 +39,7 @@ public:
 	bool loop(int &exit_code);
 
 private:
-	util::Reference<RubyState> _mrb;
+	RubyState _rb;
 	util::Reference<Logger> _logger;
 	nthread_t _max_threads = std::thread::hardware_concurrency();
 	std::string _progname;

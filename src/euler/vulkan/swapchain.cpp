@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 
+#include "euler/vulkan/graphics_pipeline.h"
 #include "euler/vulkan/renderer.h"
 #include "euler/vulkan/surface.h"
 #include "euler/vulkan/swapchain.h"
@@ -61,47 +62,80 @@ euler::vulkan::Swapchain::Capabilities::Capabilities(
     , present_mode(select_present_mode(pd, surface))
 {
 }
-
-euler::vulkan::Swapchain::Swapchain(Surface *surface,
-    const Capabilities *capabilities, vk::raii::SwapchainKHR &&sc)
+euler::vulkan::Swapchain::Swapchain(Surface &surface,
+    const Capabilities &capabilities, vk::raii::SwapchainKHR &&sc)
     : _surface(surface)
     , _capabilities(capabilities)
-    , _extent(surface->extent())
     , _swapchain(create_swapchain(std::move(sc)))
     , _images(create_images())
     , _image_views(create_image_views())
+    , _graphics_pipeline(make_graphics_pipeline())
 {
+}
+
+vk::Extent2D
+euler::vulkan::Swapchain::extent() const
+{
+	return _surface.extent();
+}
+vk::raii::ImageView &
+euler::vulkan::Swapchain::image_view(uint32_t index)
+{
+	return _image_views.at(index);
+}
+
+const vk::raii::ImageView &
+euler::vulkan::Swapchain::image_view(uint32_t index) const
+{
+	return _image_views.at(index);
+}
+
+vk::Image &
+euler::vulkan::Swapchain::image(uint32_t index)
+{
+	return _images.at(index);
+}
+const vk::Image &
+euler::vulkan::Swapchain::image(uint32_t index) const
+{
+	return _images.at(index);
+}
+
+euler::util::Reference<euler::vulkan::GraphicsPipeline>
+euler::vulkan::Swapchain::graphics_pipeline() const
+{
+	return _graphics_pipeline;
 }
 
 vk::raii::SwapchainKHR
 euler::vulkan::Swapchain::create_swapchain(vk::raii::SwapchainKHR &&sc) const
 {
 	vk::SwapchainCreateInfoKHR create_info = {
-		.surface = *_surface->surface(),
-		.minImageCount = _capabilities->image_count,
-		.imageFormat = _capabilities->surface_format.format,
-		.imageColorSpace = _capabilities->surface_format.colorSpace,
-		.imageExtent = _extent,
+		.surface = _surface.surface(),
+		.minImageCount = _capabilities.image_count,
+		.imageFormat = _capabilities.surface_format.format,
+		.imageColorSpace = _capabilities.surface_format.colorSpace,
+		.imageExtent = extent(),
 		.imageArrayLayers = 1,
 		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
 		.imageSharingMode = vk::SharingMode::eExclusive,
-		.preTransform = _capabilities->capabilities.currentTransform,
+		.preTransform = _capabilities.capabilities.currentTransform,
 		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-		.presentMode = _capabilities->present_mode,
+		.presentMode = _capabilities.present_mode,
 		.clipped = VK_TRUE,
 	};
 	if (sc != nullptr) create_info.oldSwapchain = *sc;
 	return vk::raii::SwapchainKHR(renderer()->device(), create_info);
 }
 
-std::vector<vk::raii::Image>
+std::vector<vk::Image>
 euler::vulkan::Swapchain::create_images() const
 {
-	std::vector<vk::raii::Image> images;
+	std::vector<vk::Image> images;
 	const auto swap_images = _swapchain.getImages();
 	images.reserve(swap_images.size());
 	for (const auto &image : swap_images)
-		images.emplace_back(this->renderer()->device(), image);
+		images.emplace_back(std::move(image));
 	return images;
 }
 
@@ -111,7 +145,7 @@ euler::vulkan::Swapchain::create_image_views() const
 	std::vector<vk::raii::ImageView> views;
 	vk::ImageViewCreateInfo create_info = {
 		.viewType = vk::ImageViewType::e2D,
-		.format = _capabilities->surface_format.format,
+		.format = _capabilities.surface_format.format,
 		.components = {
 			.r = vk::ComponentSwizzle::eIdentity,
 			.g = vk::ComponentSwizzle::eIdentity,
@@ -128,7 +162,7 @@ euler::vulkan::Swapchain::create_image_views() const
 	};
 	views.reserve(_images.size());
 	for (const auto &image : _images) {
-		create_info.image = *image;
+		create_info.image = image;
 		views.emplace_back(renderer()->device(), create_info);
 	}
 	return views;
@@ -137,5 +171,16 @@ euler::vulkan::Swapchain::create_image_views() const
 euler::util::Reference<euler::vulkan::Renderer>
 euler::vulkan::Swapchain::renderer() const
 {
-	return _surface->renderer();
+	return _surface.renderer();
+}
+
+euler::util::Reference<euler::vulkan::GraphicsPipeline>
+euler::vulkan::Swapchain::make_graphics_pipeline() const
+{
+	std::vector<util::Reference<Shader>> shaders = {
+		renderer()->fragment_shader(),
+		renderer()->vertex_shader(),
+	};
+	return util::make_reference<GraphicsPipeline>(_surface.window(),
+	    shaders);
 }

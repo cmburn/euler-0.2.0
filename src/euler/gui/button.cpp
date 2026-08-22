@@ -27,10 +27,10 @@ RClass *
 Button::init(const euler::util::Reference<euler::util::State> &state,
     RClass *mod, RClass *)
 {
-	auto button = state->mrb()->define_class_under(mod, "Button",
+	auto button = state->rb().define_class_under(mod, "Button",
 	    state->object_class());
 	MRB_SET_INSTANCE_TT(button, MRB_TT_DATA);
-	state->mrb()->define_method(button, "symbol", button_symbol,
+	state->rb().define_method(button, "symbol", button_symbol,
 	    MRB_ARGS_NONE());
 	return button;
 }
@@ -176,7 +176,7 @@ Button::is_pressed() const
 		return context.is_pressed_symbol(_symbol, _alignment);
 	case Type::Image: return context.is_pressed_image(_image, _alignment);
 	case Type::Invalid:
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Invalid button type");
 		std::unreachable();
 	default: std::unreachable();

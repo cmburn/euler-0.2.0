@@ -34,9 +34,9 @@ State::available_threads() const
 }
 
 mrb_value
-State::gv_state() const
+State::gv_state()
 {
-	return mrb()->gv_get(mrb()->intern_cstr(GV_STATE_SYM));
+	return rb().gv_get(rb().intern_cstr(GV_STATE_SYM));
 }
 
 static mrb_value
@@ -67,49 +67,48 @@ static mrb_value
 state_ticks(mrb_state *mrb, const mrb_value self)
 {
 	const auto state = from_mrb(mrb, self);
-	return state->mrb()->int_value(state->ticks());
+	return state->rb().int_value(state->ticks());
 }
 
 static mrb_value
 state_fps(mrb_state *mrb, const mrb_value self)
 {
 	const auto state = from_mrb(mrb, self);
-	return state->mrb()->float_value(state->fps());
+	return state->rb().float_value(state->fps());
 }
 
 static mrb_value
 state_dt(mrb_state *mrb, const mrb_value self)
 {
 	const auto state = from_mrb(mrb, self);
-	return state->mrb()->float_value(state->dt());
+	return state->rb().float_value(state->dt());
 }
 
 static mrb_value
 state_progname(mrb_state *mrb, const mrb_value self)
 {
 	const auto state = from_mrb(mrb, self);
-	return state->mrb()->str_new_cstr(state->progname().c_str());
+	return state->rb().str_new_cstr(state->progname().c_str());
 }
 
 static mrb_value
 state_title(mrb_state *mrb, const mrb_value self)
 {
 	const auto state = from_mrb(mrb, self);
-	return state->mrb()->str_new_cstr(state->title().c_str());
+	return state->rb().str_new_cstr(state->title().c_str());
 }
 
 bool
-State::initialize(const util::Config &config)
+State::initialize(const std::string_view progname, const util::Config &config)
 {
-	mrb()->mrb()->ud = util::WeakReference(this).wrap();
+	rb().mrb()->ud = util::WeakReference(this).wrap();
+	_config = config;
 	initialize_self();
-	if (!EULER_APP_NAMESPACE::State::initialize(config)) return false;
+	if (!EULER_APP_NAMESPACE::State::initialize(progname, config)) return false;
 	log()->debug("Initializing core modules");
-	/* TODO: proper physfs limiting for module load? */
-	auto self = util::Reference(this);
+	const auto self = util::Reference(this);
 	auto &mods = modules();
 	assert(mods.mod != nullptr);
-	log()->debug("Initializing core modules");
 
 	// mods.graphics.mod = graphics::init(self, mods.mod);
 	// mods.gui.mod = gui::init(self, mods.mod);
@@ -169,13 +168,13 @@ State::tick()
 RClass *
 State::object_class() const
 {
-	return this->mrb()->mrb()->object_class;
+	return this->rb().mrb()->object_class;
 }
 
 void *
-State::unwrap(const mrb_value value, const mrb_data_type *type) const
+State::unwrap(const mrb_value value, const mrb_data_type *type)
 {
-	return mrb()->data_check_get_ptr(value, type);
+	return rb().data_check_get_ptr(value, type);
 }
 State::Phase
 State::phase() const
@@ -189,7 +188,7 @@ State::set_phase(Phase phase)
 }
 
 mrb_value
-State::self_value() const
+State::self_value()
 {
 	// assert(_initialized_self);
 	// return _self_value;
@@ -213,24 +212,24 @@ void
 State::initialize_self()
 {
 	if (_initialized_self) return;
-	const auto mod = mrb()->define_module("Euler");
+	const auto mod = rb().define_module("Euler");
 	modules().mod = mod;
-	const auto util_mod = mrb()->define_module_under(mod, "Util");
+	const auto util_mod = rb().define_module_under(mod, "Util");
 	modules().util.mod = util_mod;
 	const auto cls
-	    = mrb()->define_class_under(util_mod, "State", object_class());
+	    = rb().define_class_under(util_mod, "State", object_class());
 	MRB_SET_INSTANCE_TT(cls, MRB_TT_DATA);
 	modules().app.state = cls;
-	mrb()->define_class_method(cls, "allocate", state_allocate,
+	rb().define_class_method(cls, "allocate", state_allocate,
 	    MRB_ARGS_NONE());
-	mrb()->define_method(cls, "phase", state_phase, MRB_ARGS_NONE());
-	mrb()->define_method(cls, "ticks", state_ticks, MRB_ARGS_NONE());
-	mrb()->define_method(cls, "fps", state_fps, MRB_ARGS_NONE());
-	mrb()->define_method(cls, "dt", state_dt, MRB_ARGS_NONE());
-	mrb()->define_method(cls, "progname", state_progname, MRB_ARGS_NONE());
-	mrb()->define_method(cls, "title", state_title, MRB_ARGS_NONE());
+	rb().define_method(cls, "phase", state_phase, MRB_ARGS_NONE());
+	rb().define_method(cls, "ticks", state_ticks, MRB_ARGS_NONE());
+	rb().define_method(cls, "fps", state_fps, MRB_ARGS_NONE());
+	rb().define_method(cls, "dt", state_dt, MRB_ARGS_NONE());
+	rb().define_method(cls, "progname", state_progname, MRB_ARGS_NONE());
+	rb().define_method(cls, "title", state_title, MRB_ARGS_NONE());
 	const auto ptr = util::WeakReference(this).wrap();
-	const auto data = mrb()->data_object_alloc(cls, ptr, &State::TYPE);
+	const auto data = rb().data_object_alloc(cls, ptr, &State::TYPE);
 	_self_value = mrb_obj_value(data);
 	_initialized_self = true;
 }

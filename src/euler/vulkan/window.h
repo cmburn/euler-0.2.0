@@ -6,7 +6,6 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "euler/graphics/window.h"
-#include "euler/vulkan/renderer.h"
 #include "euler/vulkan/surface.h"
 
 typedef struct SDL_Window SDL_Window;
@@ -15,10 +14,7 @@ namespace euler::vulkan {
 class Renderer;
 
 class Window : public graphics::Window {
-	friend class Renderer;
 public:
-	Window(const util::Reference<Renderer> &r, const char *title, int16_t w,
-	    int16_t h, uint64_t flags);
 	struct Flags {
 		bool fullscreen : 1 = false;
 		bool hidden : 1 = false;
@@ -47,10 +43,18 @@ public:
 	}
 
 	~Window() override;
-	Window();
-	Window(const util::Reference<Renderer> &, const char *title, int16_t w,
-	    int16_t h, Flags flags = default_flags());
 
+	SDL_Window *
+	window()
+	{
+		return _window;
+	}
+
+	const SDL_Window *
+	window() const
+	{
+		return _window;
+	}
 
 	[[nodiscard]] int16_t width() const override;
 	[[nodiscard]] int16_t height() const override;
@@ -68,15 +72,33 @@ public:
 	void image(const ImageCommand &cmd) override;
 	util::Reference<graphics::Image> to_image() const override;
 	[[nodiscard]] util::Reference<util::State> state() const override;
-	util::Reference<Renderer> renderer() const
+	util::Reference<Renderer> renderer() const;
+	void close();
+	void set_title(const char *title);
+
+	Surface &
+	surface()
 	{
-		return _renderer;
+		return _surface;
+	}
+
+	const Surface &
+	surface() const
+	{
+		return _surface;
 	}
 
 private:
+	friend class Renderer;
+	Window(const util::Reference<Renderer> &r, const char *title, int16_t w,
+	    int16_t h, uint64_t flags);
+	Window(const util::Reference<Renderer> &, const char *title, int16_t w,
+	    int16_t h, Flags flags = default_flags());
+
 	SDL_Window *_window;
 	util::Reference<Renderer> _renderer;
 	Surface _surface;
+	bool _active;
 };
 } /* namespace euler::vulkan */
 

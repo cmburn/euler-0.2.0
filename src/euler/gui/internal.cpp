@@ -40,7 +40,7 @@ euler::gui::to_nuklear(const util::Reference<util::State> &state,
 	case Symbol::OutlinedRightTriangle:
 		return NK_SYMBOL_TRIANGLE_RIGHT_OUTLINE;
 	default:
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Invalid symbol passed");
 		std::unreachable();
 	}

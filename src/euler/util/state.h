@@ -205,7 +205,9 @@ public:
 #endif
 
 	[[nodiscard]] virtual Runtime runtime() const = 0;
-	[[nodiscard]] virtual Reference<RubyState> mrb() const = 0;
+	// [[nodiscard]] virtual Reference<RubyState> mrb() const = 0;
+	[[nodiscard]] virtual const RubyState &rb() const = 0;
+	[[nodiscard]] virtual RubyState &rb() = 0;
 	[[nodiscard]] virtual RClass *object_class() const = 0;
 	[[nodiscard]] virtual Reference<Logger> log() const = 0;
 	[[nodiscard]] virtual nthread_t available_threads() const = 0;
@@ -214,22 +216,21 @@ public:
 	[[nodiscard]] virtual float fps() const = 0;
 	[[nodiscard]] virtual float dt() const = 0;
 	[[nodiscard]] virtual tick_t total_ticks() const = 0;
-	[[nodiscard]] virtual mrb_value gv_state() const = 0;
+	[[nodiscard]] virtual mrb_value gv_state() = 0;
 	[[nodiscard]] static Reference<State> get(const mrb_state *mrb);
-
 	[[nodiscard]] virtual Phase phase() const = 0;
 	virtual void set_phase(Phase phase) = 0;
 	[[nodiscard]] virtual const std::string &progname() const = 0;
 	[[nodiscard]] virtual const std::string &title() const = 0;
-	// virtual bool preinit() = 0;
-	// virtual bool initialize(int argc, const char **argv) = 0;
-	virtual bool initialize(const Config &config) = 0;
+	virtual bool initialize(std::string_view progname, const Config &config)
+	    = 0;
+	virtual const Config &config() const = 0;
 	virtual void tick() = 0;
-	virtual mrb_value self_value() const = 0;
+	virtual mrb_value self_value() = 0;
 	[[nodiscard]] virtual const Modules &modules() const = 0;
 	[[nodiscard]] virtual Modules &modules() = 0;
 	[[nodiscard]] virtual void *unwrap(mrb_value value,
-	    const mrb_data_type *type) const
+	    const mrb_data_type *type)
 	    = 0;
 	virtual Version app_version() const = 0;
 	virtual Version engine_version() const = 0;
@@ -241,7 +242,7 @@ public:
 
 	template <typename T>
 	[[nodiscard]] Reference<T>
-	unwrap(mrb_value value) const
+	unwrap(mrb_value value)
 	{
 		auto ptr = unwrap(value, &T::TYPE);
 		if (ptr == nullptr) return Reference<T>(nullptr);
@@ -250,20 +251,19 @@ public:
 
 	template <typename T>
 	[[nodiscard]] mrb_value
-	wrap(Reference<T> &obj) const
+	wrap(Reference<T> &obj)
 	{
 		if (obj == nullptr) return mrb_nil_value();
 		auto self = Reference(const_cast<State *>(this));
-		return obj.wrap(mrb()->mrb(), T::fetch_class(self), &T::TYPE);
+		return obj.wrap(rb().mrb(), T::fetch_class(self), &T::TYPE);
 	}
 
 protected:
 	virtual const mrb_data_type *data_type() const = 0;
 };
 
-#define EULER_SYM_LIT(LIT)                                                     \
-	((::euler::util::State::get(mrb)->mrb()->intern_static(LIT,            \
-	    sizeof(LIT) - 1)))
+#define EULER_SYM_LIT(S)                                                       \
+	(::euler::util::State::get(mrb)->rb().intern_static(S, sizeof(S) - 1))
 
 #define EULER_SYM(SYM) EULER_SYM_LIT(#SYM)
 

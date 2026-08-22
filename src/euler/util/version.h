@@ -16,20 +16,25 @@ class Version {
 	BIND_MRUBY_DATA("Euler::Util::Version", Version, util.version);
 
 public:
-	constexpr Version(const uint16_t major = 0, const uint16_t minor = 0,
-	    const uint16_t patch = 0)
+	/* major and minor must be < 1024, patch must be < 4096 */
+	static constexpr uint16_t MAJOR_MAX = (1 << 10) - 1;
+	static constexpr uint16_t MINOR_MAX = (1 << 10) - 1;
+	static constexpr uint16_t PATCH_MAX = (1 << 12) - 1;
+
+	explicit constexpr Version(const uint16_t major = 0,
+	    const uint16_t minor = 0, const uint16_t patch = 0)
 	    : _major(major)
 	    , _minor(minor)
 	    , _patch(patch)
 	{
-		assert(major < (1 << 10));
-		assert(minor < (1 << 10));
-		assert(patch < (1 << 12));
+		assert(major <= MAJOR_MAX);
+		assert(minor <= MINOR_MAX);
+		assert(patch <= PATCH_MAX);
 	}
 
 	[[nodiscard]] uint32_t to_int() const;
 
-	[[nodiscard]] constexpr
+	[[nodiscard]] explicit constexpr
 	operator uint32_t() const
 	{
 		return to_int();
@@ -83,13 +88,15 @@ public:
 	uint32_t to_vulkan() const;
 #endif
 
+	static Version parse(std::string_view str);
+
 private:
 	uint16_t _major : 10;
 	uint16_t _minor : 10;
 	uint16_t _patch : 12;
 };
 
-extern Version version();
+Version engine_version();
 
 }
 

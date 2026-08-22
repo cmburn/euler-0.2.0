@@ -90,12 +90,12 @@ can_decompose()
 /* ReSharper disable once CppDFAUnreachableFunctionCall */
 template <typename T>
 static std::complex<T>
-unwrap_complex(const util::Reference<util::RubyState> &mrb, mrb_value arg)
+unwrap_complex(util::RubyState &mrb, mrb_value arg)
 {
-	const auto real_value = mrb->funcall(arg, "real", 0);
-	const auto imag_value = mrb->funcall(arg, "imag", 0);
-	const auto real = static_cast<T>(mrb->to_flo(real_value));
-	const auto imag = static_cast<T>(mrb->to_flo(imag_value));
+	const auto real_value = mrb.funcall(arg, "real", 0);
+	const auto imag_value = mrb.funcall(arg, "imag", 0);
+	const auto real = static_cast<T>(mrb.to_flo(real_value));
+	const auto imag = static_cast<T>(mrb.to_flo(imag_value));
 	return std::complex<T>(real, imag);
 }
 
@@ -190,35 +190,35 @@ unwrap_num(const util::Reference<util::State> &state, mrb_value arg)
 	/* ReSharper disable CppRedundantCastExpression */
 	if constexpr (std::is_same_v<T, int16_t>) {
 		return static_cast<int16_t>(
-		    mrb_integer(state->mrb()->to_int(arg)));
+		    mrb_integer(state->rb().to_int(arg)));
 	}
 	if constexpr (std::is_same_v<T, int32_t>) {
 		return static_cast<int32_t>(
-		    mrb_integer(state->mrb()->to_int(arg)));
+		    mrb_integer(state->rb().to_int(arg)));
 	}
 	if constexpr (std::is_same_v<T, int64_t>) {
 		return static_cast<int64_t>(
-		    mrb_integer(state->mrb()->to_int(arg)));
+		    mrb_integer(state->rb().to_int(arg)));
 	}
 	if constexpr (std::is_same_v<T, uint16_t>) {
 		return static_cast<uint16_t>(
-		    mrb_integer(state->mrb()->to_int(arg)));
+		    mrb_integer(state->rb().to_int(arg)));
 	}
 	if constexpr (std::is_same_v<T, uint32_t>) {
 		return static_cast<uint32_t>(
-		    mrb_integer(state->mrb()->to_int(arg)));
+		    mrb_integer(state->rb().to_int(arg)));
 	}
 	if constexpr (std::is_same_v<T, float>) {
-		return static_cast<float>(state->mrb()->to_flo(arg));
+		return static_cast<float>(state->rb().to_flo(arg));
 	}
 	if constexpr (std::is_same_v<T, double>) {
-		return static_cast<double>(state->mrb()->to_flo(arg));
+		return static_cast<double>(state->rb().to_flo(arg));
 	}
 	if constexpr (std::is_same_v<T, std::complex<float>>) {
-		return unwrap_complex<float>(state->mrb(), arg);
+		return unwrap_complex<float>(state->rb(), arg);
 	}
 	if constexpr (std::is_same_v<T, std::complex<double>>) {
-		return unwrap_complex<double>(state->mrb(), arg);
+		return unwrap_complex<double>(state->rb(), arg);
 	}
 	/* ReSharper restore CppRedundantCastExpression */
 	return {};
@@ -305,8 +305,8 @@ inline bool
 is_complex(const mrb_state *mrb, const mrb_value v)
 {
 	const auto state = util::State::get(mrb);
-	const auto complex_class = state->mrb()->class_get("Complex");
-	return state->mrb()->obj_is_instance_of(v, complex_class);
+	const auto complex_class = state->rb().class_get("Complex");
+	return state->rb().obj_is_instance_of(v, complex_class);
 }
 
 inline bool

@@ -29,7 +29,7 @@ motor_joint_set_linear_velocity(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_value value;
-	state->mrb()->get_args("o", &value);
+	state->rb().get_args("o", &value);
 	const b2Vec2 linear_velocity
 	    = euler::physics::value_to_b2_vec(mrb, value);
 	joint->set_linear_velocity(linear_velocity);
@@ -62,7 +62,7 @@ motor_joint_set_angular_velocity(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float angular_velocity;
-	state->mrb()->get_args("f", &angular_velocity);
+	state->rb().get_args("f", &angular_velocity);
 	joint->set_angular_velocity(static_cast<float>(angular_velocity));
 	return mrb_nil_value();
 }
@@ -78,7 +78,7 @@ motor_joint_angular_velocity(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float angular_velocity = joint->angular_velocity();
-	return state->mrb()->float_value(angular_velocity);
+	return state->rb().float_value(angular_velocity);
 }
 
 /**
@@ -94,7 +94,7 @@ motor_joint_set_max_velocity_force(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float max_force;
-	state->mrb()->get_args("f", &max_force);
+	state->rb().get_args("f", &max_force);
 	joint->set_max_velocity_force(static_cast<float>(max_force));
 	return mrb_nil_value();
 }
@@ -111,7 +111,7 @@ motor_joint_max_velocity_force(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float max_force = joint->max_velocity_force();
-	return state->mrb()->float_value(max_force);
+	return state->rb().float_value(max_force);
 }
 
 /**
@@ -127,7 +127,7 @@ motor_joint_set_max_velocity_torque(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float max_torque;
-	state->mrb()->get_args("f", &max_torque);
+	state->rb().get_args("f", &max_torque);
 	joint->set_max_velocity_torque(static_cast<float>(max_torque));
 	return mrb_nil_value();
 }
@@ -144,7 +144,7 @@ motor_joint_max_velocity_torque(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float max_torque = joint->max_velocity_torque();
-	return state->mrb()->float_value(max_torque);
+	return state->rb().float_value(max_torque);
 }
 
 /**
@@ -159,7 +159,7 @@ motor_joint_set_linear_hertz(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float hertz;
-	state->mrb()->get_args("f", &hertz);
+	state->rb().get_args("f", &hertz);
 	joint->set_linear_hertz(static_cast<float>(hertz));
 	return mrb_nil_value();
 }
@@ -175,7 +175,7 @@ motor_joint_linear_hertz(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float hertz = joint->linear_hertz();
-	return state->mrb()->float_value(hertz);
+	return state->rb().float_value(hertz);
 }
 
 /**
@@ -190,7 +190,7 @@ motor_joint_set_linear_damping_ratio(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float damping_ratio;
-	state->mrb()->get_args("f", &damping_ratio);
+	state->rb().get_args("f", &damping_ratio);
 	joint->set_linear_damping_ratio(static_cast<float>(damping_ratio));
 	return mrb_nil_value();
 }
@@ -206,7 +206,7 @@ motor_joint_linear_damping_ratio(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float damping_ratio = joint->linear_damping_ratio();
-	return state->mrb()->float_value(damping_ratio);
+	return state->rb().float_value(damping_ratio);
 }
 
 /**
@@ -221,7 +221,7 @@ motor_joint_set_angular_hertz(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float hertz;
-	state->mrb()->get_args("f", &hertz);
+	state->rb().get_args("f", &hertz);
 	joint->set_angular_hertz(static_cast<float>(hertz));
 	return mrb_nil_value();
 }
@@ -237,7 +237,7 @@ motor_joint_angular_hertz(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float hertz = joint->angular_hertz();
-	return state->mrb()->float_value(hertz);
+	return state->rb().float_value(hertz);
 }
 
 /**
@@ -252,7 +252,7 @@ motor_joint_set_angular_damping_ratio(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float damping_ratio;
-	state->mrb()->get_args("f", &damping_ratio);
+	state->rb().get_args("f", &damping_ratio);
 	joint->set_angular_damping_ratio(static_cast<float>(damping_ratio));
 	return mrb_nil_value();
 }
@@ -268,7 +268,7 @@ motor_joint_angular_damping_ratio(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float damping_ratio = joint->angular_damping_ratio();
-	return state->mrb()->float_value(damping_ratio);
+	return state->rb().float_value(damping_ratio);
 }
 
 /**
@@ -283,7 +283,7 @@ motor_joint_set_max_spring_force(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float max_force;
-	state->mrb()->get_args("f", &max_force);
+	state->rb().get_args("f", &max_force);
 	joint->set_max_spring_force(static_cast<float>(max_force));
 	return mrb_nil_value();
 }
@@ -299,7 +299,7 @@ motor_joint_max_spring_force(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float max_force = joint->max_spring_force();
-	return state->mrb()->float_value(max_force);
+	return state->rb().float_value(max_force);
 }
 
 /**
@@ -314,7 +314,7 @@ motor_joint_set_max_spring_torque(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	mrb_float max_torque;
-	state->mrb()->get_args("f", &max_torque);
+	state->rb().get_args("f", &max_torque);
 	joint->set_max_spring_torque(static_cast<float>(max_torque));
 	return mrb_nil_value();
 }
@@ -330,7 +330,7 @@ motor_joint_max_spring_torque(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<MotorJoint>(self);
 	const float max_torque = joint->max_spring_torque();
-	return state->mrb()->float_value(max_torque);
+	return state->rb().float_value(max_torque);
 }
 
 RClass *
@@ -338,54 +338,54 @@ MotorJoint::init(const euler::util::Reference<euler::util::State> &state,
     RClass *mod, RClass *super)
 {
 	RClass *joint
-	    = state->mrb()->define_class_under(mod, "MotorJoint", super);
-	state->mrb()->define_method(joint,
+	    = state->rb().define_class_under(mod, "MotorJoint", super);
+	state->rb().define_method(joint,
 	    "linear_velocity=", motor_joint_set_linear_velocity,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "linear_velocity",
+	state->rb().define_method(joint, "linear_velocity",
 	    motor_joint_linear_velocity, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "angular_velocity=", motor_joint_set_angular_velocity,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "angular_velocity",
+	state->rb().define_method(joint, "angular_velocity",
 	    motor_joint_angular_velocity, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "max_velocity_force=", motor_joint_set_max_velocity_force,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "max_velocity_force",
+	state->rb().define_method(joint, "max_velocity_force",
 	    motor_joint_max_velocity_force, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "max_velocity_torque=", motor_joint_set_max_velocity_torque,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "max_velocity_torque",
+	state->rb().define_method(joint, "max_velocity_torque",
 	    motor_joint_max_velocity_torque, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "linear_hertz=", motor_joint_set_linear_hertz, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "linear_hertz",
+	state->rb().define_method(joint, "linear_hertz",
 	    motor_joint_linear_hertz, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "linear_damping_ratio=", motor_joint_set_linear_damping_ratio,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "linear_damping_ratio",
+	state->rb().define_method(joint, "linear_damping_ratio",
 	    motor_joint_linear_damping_ratio, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "angular_hertz=", motor_joint_set_angular_hertz, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "angular_hertz",
+	state->rb().define_method(joint, "angular_hertz",
 	    motor_joint_angular_hertz, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "angular_damping_ratio=", motor_joint_set_angular_damping_ratio,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "angular_damping_ratio",
+	state->rb().define_method(joint, "angular_damping_ratio",
 	    motor_joint_angular_damping_ratio, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "max_spring_force=", motor_joint_set_max_spring_force,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "max_spring_force",
+	state->rb().define_method(joint, "max_spring_force",
 	    motor_joint_max_spring_force, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "max_spring_torque=", motor_joint_set_max_spring_torque,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "max_spring_torque",
+	state->rb().define_method(joint, "max_spring_torque",
 	    motor_joint_max_spring_torque, MRB_ARGS_REQ(0));
 	return joint;
 }

@@ -25,7 +25,7 @@ distance_joint_set_length(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_float length;
-	state->mrb()->get_args("f", &length);
+	state->rb().get_args("f", &length);
 	joint->set_length(static_cast<float>(length));
 	return mrb_nil_value();
 }
@@ -41,7 +41,7 @@ distance_joint_length(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	const float length = joint->length();
-	return state->mrb()->float_value(length);
+	return state->rb().float_value(length);
 }
 
 /**
@@ -56,7 +56,7 @@ distance_joint_enable_spring(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_bool flag;
-	state->mrb()->get_args("b", &flag);
+	state->rb().get_args("b", &flag);
 	joint->enable_spring(flag);
 	return mrb_nil_value();
 }
@@ -89,7 +89,7 @@ distance_joint_set_spring_force_range(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_value arr;
-	state->mrb()->get_args("A", &arr);
+	state->rb().get_args("A", &arr);
 	const b2Vec2 range = euler::physics::value_to_b2_vec(mrb, arr);
 	joint->set_spring_force_range(range.x, range.y);
 	return mrb_nil_value();
@@ -106,9 +106,9 @@ distance_joint_spring_force_range(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	auto [lower_force, upper_force] = joint->spring_force_range();
-	const mrb_value out = state->mrb()->ary_new_capa(2);
-	state->mrb()->ary_push(out, state->mrb()->float_value(lower_force));
-	state->mrb()->ary_push(out, state->mrb()->float_value(upper_force));
+	const mrb_value out = state->rb().ary_new_capa(2);
+	state->rb().ary_push(out, state->rb().float_value(lower_force));
+	state->rb().ary_push(out, state->rb().float_value(upper_force));
 	return out;
 }
 
@@ -124,7 +124,7 @@ distance_joint_set_spring_hertz(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_float hertz;
-	state->mrb()->get_args("f", &hertz);
+	state->rb().get_args("f", &hertz);
 	joint->set_spring_hertz(static_cast<float>(hertz));
 	return mrb_nil_value();
 }
@@ -140,7 +140,7 @@ distance_joint_spring_hertz(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	const float hertz = joint->spring_hertz();
-	return state->mrb()->float_value(hertz);
+	return state->rb().float_value(hertz);
 }
 
 /**
@@ -155,7 +155,7 @@ distance_joint_set_spring_damping_ratio(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_float damping_ratio;
-	state->mrb()->get_args("f", &damping_ratio);
+	state->rb().get_args("f", &damping_ratio);
 	joint->set_spring_damping_ratio(static_cast<float>(damping_ratio));
 	return mrb_nil_value();
 }
@@ -171,7 +171,7 @@ distance_joint_spring_damping_ratio(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	const float damping_ratio = joint->spring_damping_ratio();
-	return state->mrb()->float_value(damping_ratio);
+	return state->rb().float_value(damping_ratio);
 }
 
 /**
@@ -186,7 +186,7 @@ distance_joint_enable_limit(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_bool flag;
-	state->mrb()->get_args("b", &flag);
+	state->rb().get_args("b", &flag);
 	joint->enable_limit(flag);
 	return mrb_nil_value();
 }
@@ -219,7 +219,7 @@ distance_joint_set_length_range(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_value arr;
-	state->mrb()->get_args("A", &arr);
+	state->rb().get_args("A", &arr);
 	const b2Vec2 range = euler::physics::value_to_b2_vec(mrb, arr);
 	joint->set_length_range(range.x, range.y);
 	return mrb_nil_value();
@@ -236,9 +236,9 @@ distance_joint_length_range(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	auto [min_length, max_length] = joint->length_range();
-	const mrb_value out = state->mrb()->ary_new_capa(2);
-	state->mrb()->ary_push(out, state->mrb()->float_value(min_length));
-	state->mrb()->ary_push(out, state->mrb()->float_value(max_length));
+	const mrb_value out = state->rb().ary_new_capa(2);
+	state->rb().ary_push(out, state->rb().float_value(min_length));
+	state->rb().ary_push(out, state->rb().float_value(max_length));
 	return out;
 }
 
@@ -254,7 +254,7 @@ distance_joint_current_length(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	const float current_length = joint->current_length();
-	return state->mrb()->float_value(current_length);
+	return state->rb().float_value(current_length);
 }
 
 /**
@@ -269,7 +269,7 @@ distance_joint_enable_motor(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_bool flag;
-	state->mrb()->get_args("b", &flag);
+	state->rb().get_args("b", &flag);
 	joint->enable_motor(flag);
 	return mrb_nil_value();
 }
@@ -302,7 +302,7 @@ distance_joint_set_motor_speed(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_float motor_speed;
-	state->mrb()->get_args("f", &motor_speed);
+	state->rb().get_args("f", &motor_speed);
 	joint->set_motor_speed(static_cast<float>(motor_speed));
 	return mrb_nil_value();
 }
@@ -318,7 +318,7 @@ distance_joint_motor_speed(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	const float motor_speed = joint->motor_speed();
-	return state->mrb()->float_value(motor_speed);
+	return state->rb().float_value(motor_speed);
 }
 
 /**
@@ -333,7 +333,7 @@ distance_joint_set_max_motor_force(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	mrb_float force;
-	state->mrb()->get_args("f", &force);
+	state->rb().get_args("f", &force);
 	joint->set_max_motor_force(static_cast<float>(force));
 	return mrb_nil_value();
 }
@@ -349,7 +349,7 @@ distance_joint_max_motor_force(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	const float force = joint->max_motor_force();
-	return state->mrb()->float_value(force);
+	return state->rb().float_value(force);
 }
 
 /**
@@ -363,7 +363,7 @@ distance_joint_motor_force(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<DistanceJoint>(self);
 	const float force = joint->motor_force();
-	return state->mrb()->float_value(force);
+	return state->rb().float_value(force);
 }
 
 RClass *
@@ -371,53 +371,53 @@ box2d_distance_joint_init(mrb_state *mrb, RClass *mod, RClass *super)
 {
 	const auto state = euler::util::State::get(mrb);
 	RClass *joint
-	    = state->mrb()->define_class_under(mod, "DistanceJoint", super);
-	state->mrb()->define_method(joint, "length=", distance_joint_set_length,
+	    = state->rb().define_class_under(mod, "DistanceJoint", super);
+	state->rb().define_method(joint, "length=", distance_joint_set_length,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "length", distance_joint_length,
+	state->rb().define_method(joint, "length", distance_joint_length,
 	    MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "spring_enabled=", distance_joint_enable_spring, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "spring_enabled",
+	state->rb().define_method(joint, "spring_enabled",
 	    distance_joint_is_spring_enabled, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "spring_force_range=", distance_joint_set_spring_force_range,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "spring_force_range",
+	state->rb().define_method(joint, "spring_force_range",
 	    distance_joint_spring_force_range, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "spring_hertz=", distance_joint_set_spring_hertz, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "spring_hertz",
+	state->rb().define_method(joint, "spring_hertz",
 	    distance_joint_spring_hertz, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "spring_damping_ratio=", distance_joint_set_spring_damping_ratio,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "spring_damping_ratio",
+	state->rb().define_method(joint, "spring_damping_ratio",
 	    distance_joint_spring_damping_ratio, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "limit_enabled=", distance_joint_enable_limit, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "limit_enabled",
+	state->rb().define_method(joint, "limit_enabled",
 	    distance_joint_is_limit_enabled, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "length_range=", distance_joint_set_length_range, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "length_range",
+	state->rb().define_method(joint, "length_range",
 	    distance_joint_length_range, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "current_length",
+	state->rb().define_method(joint, "current_length",
 	    distance_joint_current_length, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "motor_enabled=", distance_joint_enable_motor, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "motor_enabled",
+	state->rb().define_method(joint, "motor_enabled",
 	    distance_joint_is_motor_enabled, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "motor_speed=", distance_joint_set_motor_speed, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "motor_speed",
+	state->rb().define_method(joint, "motor_speed",
 	    distance_joint_motor_speed, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "max_motor_force=", distance_joint_set_max_motor_force,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "max_motor_force",
+	state->rb().define_method(joint, "max_motor_force",
 	    distance_joint_max_motor_force, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "motor_force",
+	state->rb().define_method(joint, "motor_force",
 	    distance_joint_motor_force, MRB_ARGS_REQ(0));
 	return joint;
 }
@@ -426,7 +426,7 @@ RClass *
 DistanceJoint::init(const util::Reference<util::State> &state, RClass *mod,
     RClass *super)
 {
-	return box2d_distance_joint_init(state->mrb()->mrb(), mod, super);
+	return box2d_distance_joint_init(state->rb().mrb(), mod, super);
 }
 
 void

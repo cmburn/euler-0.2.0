@@ -21,7 +21,7 @@ euler::util::read_hash_float(mrb_state *mrb, const mrb_value hash,
 {
 	const auto state = State::get(mrb);
 	const auto sym = mrb_symbol_value(key);
-	const auto value = state->mrb()->hash_get(hash, sym);
+	const auto value = state->rb().hash_get(hash, sym);
 	if (mrb_nil_p(value)) return default_value;
-	return static_cast<float>(state->mrb()->to_flo(value));
+	return static_cast<float>(state->rb().to_flo(value));
 }

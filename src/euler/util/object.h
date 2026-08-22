@@ -222,6 +222,18 @@ public:
 		return _object;
 	}
 
+	T &
+	operator*()
+	{
+		return *_object;
+	}
+
+	const T &
+	operator*() const
+	{
+		return *_object;
+	}
+
 	void *
 	wrap()
 	{
@@ -282,8 +294,6 @@ public:
 	Reference<U>
 	cast_to() const
 	{
-		// static_assert(std::is_convertible_v<T *, U *>
-		//     || std::is_convertible_v<U *, T *>);
 		return Reference<U>(dynamic_cast<U *>(_object));
 	}
 

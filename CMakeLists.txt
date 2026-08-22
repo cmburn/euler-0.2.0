@@ -46,6 +46,12 @@ endif ()
 
 if (EULER_NATIVE_BUILD)
     find_package(Vulkan REQUIRED)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/add_glsl_target.cmake)
+
+    add_glsl_target(euler_shaders
+            shaders/shader.vert
+            shaders/shader.frag
+    )
 endif ()
 
 add_subdirectory(extern)

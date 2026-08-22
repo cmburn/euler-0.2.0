@@ -9,61 +9,71 @@
 
 #include "euler/vulkan/swapchain.h"
 
-
 namespace euler::vulkan {
 class Window;
 class Renderer;
+class GraphicsPipeline;
 
 class Surface final {
 	friend class Renderer;
 
 public:
-	Surface(Window *window);
-
-	struct Flags {
-		bool fullscreen : 1 = false;
-		bool hidden : 1 = false;
-		bool borderless : 1 = false;
-		bool resizable : 1 = false;
-		bool minimized : 1 = false;
-		bool maximized : 1 = false;
-		bool mouse_grabbed : 1 = false;
-		bool input_focus : 1 = false;
-		bool modal : 1 = false;
-		bool high_pixel_density : 1 = false;
-		bool mouse_capture : 1 = false;
-		bool always_on_top : 1 = false;
-		bool utility : 1 = false;
-		bool tooltip : 1 = false;
-		bool popup_menu : 1 = false;
-		bool keyboard_grabbed : 1 = false;
-		bool window_transparent : 1 = false;
-		bool not_focusable : 1 = false;
-	};
-
-	static Flags
-	default_flags()
-	{
-		return Flags {};
-	}
+	explicit Surface(Window &window);
 
 	~Surface() = default;
 
-	const vk::raii::SurfaceKHR &surface() const
+	const vk::raii::SurfaceKHR &
+	surface() const
 	{
 		return _surface;
 	}
 
-	vk::raii::SurfaceKHR &surface()
+	vk::raii::SurfaceKHR &
+	surface()
 	{
 		return _surface;
 	}
 
 	util::Reference<Renderer> renderer() const;
 	vk::Extent2D extent() const;
+	Swapchain &
+	swapchain()
+	{
+		return _swapchain;
+	}
+	const Swapchain &
+	swapchain() const
+	{
+		return _swapchain;
+	}
+	Swapchain::Capabilities &
+	swapchain_capabilities()
+	{
+		return _swapchain_capabilities;
+	}
+	const Swapchain::Capabilities &
+	swapchain_capabilities() const
+	{
+		return _swapchain_capabilities;
+	}
+
+	Window &
+	window()
+	{
+		return _window;
+	}
+
+	const Window &
+	window() const
+	{
+		return _window;
+	}
+
+	void record_commands(const vk::raii::CommandBuffer &cmd,
+	    uint32_t image_index);
 
 private:
-	Window *_window;
+	Window &_window;
 	vk::raii::SurfaceKHR _surface;
 	vk::Extent2D _extent;
 	Swapchain::Capabilities _swapchain_capabilities;

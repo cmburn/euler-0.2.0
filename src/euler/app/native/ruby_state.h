@@ -16,7 +16,8 @@ class RubyState final : public util::RubyState {
 public:
 	RubyState();
 	~RubyState() override;
-	mrb_state *mrb() const override;
+	const mrb_state *mrb() const override;
+	mrb_state *mrb() override;
 	void raise_on_error() override;
 	[[noreturn]] void raise(RClass *c, const char *msg) override;
 	[[noreturn]] void raisef(RClass *c, const char *fmt, ...) override;
@@ -418,6 +419,7 @@ public:
 
 private:
 	mrb_state *_mrb;
+	bool _closed = false;
 };
 } /* namespace euler::app::native */
 

@@ -78,8 +78,7 @@ wrap_method()
 		 * fetch it but before we call mrb_raise, but that's unlikely
 		 * enough to worry about for now, as the containing State should
 		 * have the same lifetime as the passed mrb_state. */
-		RubyState *rs = State::get(mrb)->mrb().get();
-		rs->exc_raise(exc);
+		State::get(mrb)->rb().exc_raise(exc);
 	};
 }
 
@@ -109,7 +108,7 @@ void
 define_method(const Reference<State> &state, RClass *cls, const char *name,
     const mrb_aspec args = MRB_ARGS_NONE())
 {
-	state->mrb()->define_method(cls, name, wrap_method<method>(), args);
+	state->rb().define_method(cls, name, wrap_method<method>(), args);
 }
 
 template <auto function>
@@ -118,7 +117,7 @@ define_function(const Reference<State> &state, RClass *cls, const char *name,
     const mrb_aspec args = MRB_ARGS_NONE())
 {
 	static constexpr auto fn = wrap_function<function>();
-	state->mrb()->define_class_method(cls, name, fn, args);
+	state->rb().define_class_method(cls, name, fn, args);
 }
 
 RClass *init(const Reference<State> &state, RClass *mod, RClass * = nullptr);
@@ -137,7 +136,7 @@ static Reference<T>
 unwrap(const Reference<State> &state, mrb_value self_value,
     const mrb_data_type *type)
 {
-	const void *ptr = state->mrb()->data_check_get_ptr(self_value, type);
+	const void *ptr = state->rb().data_check_get_ptr(self_value, type);
 	return Reference<T>::unwrap(ptr);
 }
 
@@ -146,7 +145,7 @@ static Reference<T>
 unwrap(const Reference<State> &state, mrb_value self_value)
 {
 	const void *ptr
-	    = state->mrb()->data_check_get_ptr(self_value, &T::TYPE);
+	    = state->rb().data_check_get_ptr(self_value, &T::TYPE);
 	return Reference<T>::unwrap(ptr);
 }
 
@@ -180,12 +179,12 @@ unwrap_data(mrb_state *mrb, const mrb_value &value, const mrb_data_type *type)
 {
 	auto state = State::get(mrb);
 	if (mrb_nil_p(value)) {
-		state->mrb()->raisef(state->mrb()->type_error(),
+		state->rb().raisef(state->rb().type_error(),
 		    "Expected a %s object", type->struct_name);
 	}
-	if (auto ptr = state->mrb()->data_get_ptr(value, type); ptr != nullptr)
+	if (auto ptr = state->rb().data_get_ptr(value, type); ptr != nullptr)
 		return static_cast<T *>(ptr);
-	state->mrb()->raisef(state->mrb()->type_error(), "Expected a %s object",
+	state->rb().raisef(state->rb().type_error(), "Expected a %s object",
 	    type->struct_name);
 	std::unreachable();
 }

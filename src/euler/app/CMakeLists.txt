@@ -46,6 +46,7 @@ elseif (EULER_NATIVE_BUILD)
     target_link_libraries(euler_app PUBLIC
             euler_vulkan
             quill
+            nlohmann_json::nlohmann_json
     )
 endif ()
 

@@ -5,6 +5,10 @@
 #include <unordered_set>
 
 #include <SDL3/SDL_video.h>
+#include <SDL3/SDL_vulkan.h>
+
+#include "euler/vulkan/graphics_pipeline.h"
+#include "euler/vulkan/renderer.h"
 
 using euler::vulkan::Window;
 
@@ -37,7 +41,7 @@ Window::Window(const util::Reference<Renderer> &r, const char *title,
     const int16_t w, const int16_t h, const uint64_t flags)
     : _window(SDL_CreateWindow(title, w, h, flags))
     , _renderer(r)
-    , _surface(this)
+    , _surface(*this)
 {
 }
 
@@ -147,4 +151,30 @@ euler::util::Reference<euler::util::State>
 Window::state() const
 {
 	return nullptr;
+}
+
+euler::util::Reference<euler::vulkan::Renderer>
+Window::renderer() const
+{
+	return _renderer;
+}
+
+void
+Window::close()
+{
+	_active = false;
+	const auto str = std::string(title());
+	const auto idx = _renderer->_window_indices.at(str);
+	_renderer->_window_indices.erase(str);
+	_renderer->_windows.at(idx) = nullptr;
+}
+
+void
+Window::set_title(const char *title)
+{
+	SDL_SetWindowTitle(_window, title);
+	const auto str = std::string(title);
+	const auto idx = _renderer->_window_indices.at(str);
+	_renderer->_window_indices.erase(str);
+	_renderer->_window_indices.emplace(str, idx);
 }

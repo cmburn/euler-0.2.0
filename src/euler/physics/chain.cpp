@@ -36,11 +36,11 @@ chain_surface_materials(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto chain = Chain::unwrap(mrb, self);
 	const auto materials = chain->surface_materials();
-	const mrb_value out = state->mrb()->ary_new_capa(materials.size());
+	const mrb_value out = state->rb().ary_new_capa(materials.size());
 	for (const auto &sm : materials) {
 		const mrb_value mat
 		    = euler::physics::surface_material_to_value(mrb, &sm);
-		state->mrb()->ary_push(out, mat);
+		state->rb().ary_push(out, mat);
 	}
 	return out;
 }
@@ -64,11 +64,11 @@ chain_set_surface_materials(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto chain = Chain::unwrap(mrb, self);
 	mrb_value array;
-	state->mrb()->get_args("A", &array);
+	state->rb().get_args("A", &array);
 	const mrb_int len = RARRAY_LEN(array);
 	const int chain_len = chain->surface_material_count();
 	if (len != 1 && len != chain_len) {
-		state->mrb()->raisef(state->mrb()->argument_error(),
+		state->rb().raisef(state->rb().argument_error(),
 		    "Expected assignment of array of length 1 or %d for chain "
 		    "of length %d",
 		    chain_len, chain_len);
@@ -76,7 +76,7 @@ chain_set_surface_materials(mrb_state *mrb, const mrb_value self)
 	const bool single = (len == 1);
 	for (int i = 0; i < chain_len; ++i) {
 		const mrb_value item
-		    = state->mrb()->ary_ref(array, single ? 0 : i);
+		    = state->rb().ary_ref(array, single ? 0 : i);
 		const b2SurfaceMaterial sm
 		    = euler::physics::value_to_surface_material(mrb, item);
 		chain->set_surface_material(sm, i);
@@ -103,7 +103,7 @@ chain_set_surface_material(mrb_state *mrb, const mrb_value self)
 	const auto chain = Chain::unwrap(mrb, self);
 	mrb_value material_value;
 	mrb_int index;
-	state->mrb()->get_args("oi", &material_value, &index);
+	state->rb().get_args("oi", &material_value, &index);
 	const b2SurfaceMaterial sm
 	    = euler::physics::value_to_surface_material(mrb, material_value);
 	chain->set_surface_material(sm, static_cast<int>(index));
@@ -133,10 +133,10 @@ chain_segments(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto chain = Chain::unwrap(mrb, self);
 	const auto segments = chain->segments();
-	const mrb_value out = state->mrb()->ary_new_capa(segments.size());
+	const mrb_value out = state->rb().ary_new_capa(segments.size());
 	for (auto segment : segments) {
 		const mrb_value segment_value = state->wrap(segment);
-		state->mrb()->ary_push(out, segment_value);
+		state->rb().ary_push(out, segment_value);
 	}
 	return out;
 }
@@ -160,19 +160,19 @@ box2d_chain_init(mrb_state *mrb, RClass *mod)
 {
 	const auto state = euler::util::State::get(mrb);
 	RClass *chain
-	    = state->mrb()->define_class_under(mod, "World", mrb->object_class);
+	    = state->rb().define_class_under(mod, "World", mrb->object_class);
 	MRB_SET_INSTANCE_TT(chain, MRB_TT_DATA);
-	state->mrb()->define_method(chain, "surface_materials",
+	state->rb().define_method(chain, "surface_materials",
 	    chain_surface_materials, MRB_ARGS_NONE());
-	state->mrb()->define_method(chain,
+	state->rb().define_method(chain,
 	    "surface_materials=", chain_set_surface_materials, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(chain, "set_surface_material",
+	state->rb().define_method(chain, "set_surface_material",
 	    chain_set_surface_material, MRB_ARGS_REQ(2));
-	state->mrb()->define_method(chain, "world", chain_world,
+	state->rb().define_method(chain, "world", chain_world,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(chain, "segments", chain_segments,
+	state->rb().define_method(chain, "segments", chain_segments,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(chain, "valid?", chain_is_valid,
+	state->rb().define_method(chain, "valid?", chain_is_valid,
 	    MRB_ARGS_NONE());
 	return chain;
 }
@@ -180,7 +180,7 @@ box2d_chain_init(mrb_state *mrb, RClass *mod)
 RClass *
 Chain::init(const util::Reference<util::State> &state, RClass *mod, RClass *)
 {
-	return box2d_chain_init(state->mrb()->mrb(), mod);
+	return box2d_chain_init(state->rb().mrb(), mod);
 }
 
 euler::util::Reference<Chain>

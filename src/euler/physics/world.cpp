@@ -46,7 +46,7 @@ parse_world_new_args(mrb_state *mrb)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -57,7 +57,7 @@ parse_world_new_args(mrb_state *mrb)
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	state->mrb()->get_args(":", &kwargs);
+	state->rb().get_args(":", &kwargs);
 	b2WorldDef world_def = b2DefaultWorldDef();
 	assert(GRAVITY < KW_COUNT);
 	if (!mrb_undef_p(kw_values[GRAVITY])) {
@@ -159,7 +159,7 @@ world_step(mrb_state *mrb, const mrb_value self)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -170,7 +170,7 @@ world_step(mrb_state *mrb, const mrb_value self)
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	state->mrb()->get_args("|f:", &time_step, &kwargs);
+	state->rb().get_args("|f:", &time_step, &kwargs);
 	if (!mrb_undef_p(kw_values[SUBSTEPS])) {
 		substep_count
 		    = static_cast<int>(mrb_integer(kw_values[SUBSTEPS]));
@@ -195,8 +195,8 @@ world_body_events(mrb_state *mrb, const mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	auto events = world->body_events();
-	const mrb_value ary = state->mrb()->ary_new_capa(events.size());
-	for (auto &event : events) state->mrb()->ary_push(ary, event.wrap(mrb));
+	const mrb_value ary = state->rb().ary_new_capa(events.size());
+	for (auto &event : events) state->rb().ary_push(ary, event.wrap(mrb));
 	return ary;
 }
 
@@ -218,11 +218,11 @@ world_sensor_events(mrb_state *mrb, const mrb_value self)
 //     const b2ShapeId shape_a, const b2ShapeId shape_b)
 // {
 // 	const auto state = euler::util::State::get(mrb);
-// 	const mrb_value hash = state->mrb()->hash_new();
+// 	const mrb_value hash = state->rb().hash_new();
 // 	// const mrb_value a = box2d_shape_wrap(mrb, shape_a);
 // 	// const mrb_value b = box2d_shape_wrap(mrb, shape_b);
-// 	state->mrb()->hash_set(hash, EULER_SYM_VAL(a), a);
-// 	state->mrb()->hash_set(hash, EULER_SYM_VAL(b), b);
+// 	state->rb().hash_set(hash, EULER_SYM_VAL(a), a);
+// 	state->rb().hash_set(hash, EULER_SYM_VAL(b), b);
 // 	return hash;
 // }
 
@@ -260,7 +260,7 @@ world_overlap_aabb(mrb_state *mrb, const mrb_value self)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -272,7 +272,7 @@ world_overlap_aabb(mrb_state *mrb, const mrb_value self)
 		.rest = nullptr,
 	};
 	mrb_value block;
-	state->mrb()->get_args("&:", &block, &kwargs);
+	state->rb().get_args("&:", &block, &kwargs);
 	const b2Vec2 lower_bound
 	    = euler::physics::value_to_b2_vec(mrb, kw_values[LOWER_BOUND]);
 	const b2Vec2 upper_bound
@@ -282,14 +282,14 @@ world_overlap_aabb(mrb_state *mrb, const mrb_value self)
 		.upperBound = upper_bound,
 	};
 	mrb_value result = mrb_nil_value();
-	if (!mrb_nil_p(block)) result = state->mrb()->ary_new();
+	if (!mrb_nil_p(block)) result = state->rb().ary_new();
 	world->overlap_aabb(aabb, [&](auto &shape) {
 		if (mrb_nil_p(block)) {
-			state->mrb()->ary_push(result, state->wrap(shape));
+			state->rb().ary_push(result, state->wrap(shape));
 			return true;
 		}
 		const auto yield_result
-		    = state->mrb()->yield(block, state->wrap(shape));
+		    = state->rb().yield(block, state->wrap(shape));
 		return mrb_true_p(yield_result);
 	});
 	return result;
@@ -301,33 +301,33 @@ read_shape_proxy(mrb_state *mrb, const mrb_value value)
 	const auto state = euler::util::State::get(mrb);
 	/* should be a hash with two keys: points and radius */
 	if (!mrb_hash_p(value))
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Expected hash for shape proxy");
 	const mrb_value points_value
-	    = state->mrb()->hash_get(value, EULER_SYM_VAL(points));
+	    = state->rb().hash_get(value, EULER_SYM_VAL(points));
 	if (!mrb_array_p(points_value)) {
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Expected array for shape proxy points");
 	}
 	if (RARRAY_LEN(points_value) == 0) {
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Shape proxy points array cannot be empty");
 	}
 	const int n_points = static_cast<int>(RARRAY_LEN(points_value));
 	if (n_points > B2_MAX_POLYGON_VERTICES) {
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Shape proxy points array exceeds maximum vertices");
 	}
 	b2Vec2 points[B2_MAX_POLYGON_VERTICES] = {};
 	for (int i = 0; i < n_points; ++i) {
-		const auto point_value = state->mrb()->ary_ref(points_value, i);
+		const auto point_value = state->rb().ary_ref(points_value, i);
 		points[i] = euler::physics::value_to_b2_vec(mrb, point_value);
 	}
 	// radius is optional, defaults to 0
 	float radius = 0.0f;
-	if (state->mrb()->hash_key_p(value, EULER_SYM_VAL(radius))) {
+	if (state->rb().hash_key_p(value, EULER_SYM_VAL(radius))) {
 		const mrb_value radius_value
-		    = state->mrb()->hash_get(value, EULER_SYM_VAL(radius));
+		    = state->rb().hash_get(value, EULER_SYM_VAL(radius));
 		radius = static_cast<float>(mrb_float(radius_value));
 	}
 	return b2MakeProxy(points, n_points, radius);
@@ -357,7 +357,7 @@ world_overlap_shape(mrb_state *mrb, mrb_value self)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -368,37 +368,37 @@ world_overlap_shape(mrb_state *mrb, mrb_value self)
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	state->mrb()->get_args("&:", &block, &kwargs);
-	mrb_value hash = state->mrb()->hash_new();
+	state->rb().get_args("&:", &block, &kwargs);
+	mrb_value hash = state->rb().hash_new();
 	mrb_value points = kw_values[POINTS];
 	if (!mrb_array_p(points)) {
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Expected array for shape proxy points");
 	}
 	if (RARRAY_LEN(points) == 0) {
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Shape proxy points array cannot be empty");
 	}
 	if (RARRAY_LEN(points) > B2_MAX_POLYGON_VERTICES) {
-		state->mrb()->raisef(state->mrb()->argument_error(),
+		state->rb().raisef(state->rb().argument_error(),
 		    "Shape proxy points array exceeds maximum vertices (%d)",
 		    B2_MAX_POLYGON_VERTICES);
 	}
-	state->mrb()->hash_set(hash, EULER_SYM_VAL(points), kw_values[POINTS]);
+	state->rb().hash_set(hash, EULER_SYM_VAL(points), kw_values[POINTS]);
 	if (!mrb_undef_p(kw_values[RADIUS]))
-		state->mrb()->hash_set(hash, EULER_SYM_VAL(radius),
+		state->rb().hash_set(hash, EULER_SYM_VAL(radius),
 		    kw_values[RADIUS]);
 	const b2ShapeProxy sp = read_shape_proxy(mrb, hash);
 	auto result = mrb_nil_value();
-	if (!mrb_nil_p(block)) result = state->mrb()->ary_new();
+	if (!mrb_nil_p(block)) result = state->rb().ary_new();
 	world->overlap_shape(sp, [&](auto &shape) {
 		if (mrb_nil_p(block)) {
-			state->mrb()->ary_push(result, state->wrap(shape));
+			state->rb().ary_push(result, state->wrap(shape));
 			return true;
 		}
 		const auto yield_result
-		    = state->mrb()->yield(block, state->wrap(shape));
-		state->mrb()->ary_push(result, yield_result);
+		    = state->rb().yield(block, state->wrap(shape));
+		state->rb().ary_push(result, yield_result);
 		return true;
 	});
 	return result;
@@ -421,7 +421,7 @@ read_cast_ray_args(mrb_state *mrb, b2Vec2 *origin, b2Vec2 *translation,
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -432,8 +432,8 @@ read_cast_ray_args(mrb_state *mrb, b2Vec2 *origin, b2Vec2 *translation,
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	if (block == nullptr) state->mrb()->get_args(":", &kwargs);
-	else state->mrb()->get_args("&:", block, &kwargs);
+	if (block == nullptr) state->rb().get_args(":", &kwargs);
+	else state->rb().get_args("&:", block, &kwargs);
 	*origin = euler::physics::value_to_b2_vec(mrb, kw_values[ORIGIN]);
 	*translation
 	    = euler::physics::value_to_b2_vec(mrb, kw_values[TRANSLATION]);
@@ -460,26 +460,26 @@ world_cast_ray(mrb_state *mrb, mrb_value self)
 	// 	.world = world,
 	// 	.block = block,
 	// 	.result
-	// 	= mrb_nil_p(block) ? state->mrb()->ary_new() : mrb_nil_value(),
+	// 	= mrb_nil_p(block) ? state->rb().ary_new() : mrb_nil_value(),
 	// };
 	// world->CastRay(origin, translation, filter, cast_result_fn, &ctx);
 	// return ctx.result;
 	auto result = mrb_nil_value();
-	if (!mrb_nil_p(block)) result = state->mrb()->ary_new();
+	if (!mrb_nil_p(block)) result = state->rb().ary_new();
 	const auto fn = [&](auto &shape, auto point, auto normal,
 			    auto fraction) -> float {
 		if (mrb_nil_p(block)) {
-			state->mrb()->ary_push(result, state->wrap(shape));
+			state->rb().ary_push(result, state->wrap(shape));
 			return 1.0f;
 		}
 		auto block_result
-		    = state->mrb()->call(block, state->wrap(shape),
+		    = state->rb().call(block, state->wrap(shape),
 			euler::physics::b2_vec_to_value(mrb, point),
 			euler::physics::b2_vec_to_value(mrb, normal),
-			state->mrb()->float_value(fraction));
+			state->rb().float_value(fraction));
 		if (mrb_nil_p(block_result)) return 0.0f;
 		const mrb_value float_value
-		    = state->mrb()->ensure_float_type(block_result);
+		    = state->rb().ensure_float_type(block_result);
 		return mrb_float(float_value);
 	};
 	(void)world->cast_ray(origin, translation, fn);
@@ -500,15 +500,15 @@ world_cast_ray_closest(mrb_state *mrb, mrb_value self)
 		auto ref = euler::physics::Shape::wrap(result.shapeId);
 		shape = state->wrap(ref);
 	}
-	const mrb_value out = state->mrb()->hash_new_capa(5);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(shape), shape);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(point),
+	const mrb_value out = state->rb().hash_new_capa(5);
+	state->rb().hash_set(out, EULER_SYM_VAL(shape), shape);
+	state->rb().hash_set(out, EULER_SYM_VAL(point),
 	    euler::physics::b2_vec_to_value(mrb, result.point));
-	state->mrb()->hash_set(out, EULER_SYM_VAL(normal),
+	state->rb().hash_set(out, EULER_SYM_VAL(normal),
 	    euler::physics::b2_vec_to_value(mrb, result.normal));
-	state->mrb()->hash_set(out, EULER_SYM_VAL(fraction),
-	    state->mrb()->float_value(result.fraction));
-	state->mrb()->hash_set(out, EULER_SYM_VAL(hit),
+	state->rb().hash_set(out, EULER_SYM_VAL(fraction),
+	    state->rb().float_value(result.fraction));
+	state->rb().hash_set(out, EULER_SYM_VAL(hit),
 	    mrb_bool_value(result.hit));
 	return out;
 }
@@ -531,7 +531,7 @@ world_cast_shape(mrb_state *mrb, mrb_value self)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -542,26 +542,26 @@ world_cast_shape(mrb_state *mrb, mrb_value self)
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	state->mrb()->get_args("&:", &block, &kwargs);
+	state->rb().get_args("&:", &block, &kwargs);
 	const b2ShapeProxy sp = read_shape_proxy(mrb, kw_values[SHAPE]);
 	const b2Vec2 translation
 	    = euler::physics::value_to_b2_vec(mrb, kw_values[TRANSLATION]);
 	auto result = mrb_nil_value();
-	if (!mrb_nil_p(block)) result = state->mrb()->ary_new();
+	if (!mrb_nil_p(block)) result = state->rb().ary_new();
 	const auto fn = [&](auto &shape, auto point, auto normal,
 			    auto fraction) -> float {
 		if (mrb_nil_p(block)) {
-			state->mrb()->ary_push(result, state->wrap(shape));
+			state->rb().ary_push(result, state->wrap(shape));
 			return 1.0f;
 		}
-		auto block_result = state->mrb()->funcall(block, "call", 4,
+		auto block_result = state->rb().funcall(block, "call", 4,
 		    state->wrap(shape),
 		    euler::physics::b2_vec_to_value(mrb, point),
 		    euler::physics::b2_vec_to_value(mrb, normal),
-		    state->mrb()->float_value(fraction));
+		    state->rb().float_value(fraction));
 		if (mrb_nil_p(block_result)) return 0.0f;
 		const mrb_value float_value
-		    = state->mrb()->ensure_float_type(block_result);
+		    = state->rb().ensure_float_type(block_result);
 		return mrb_float(float_value);
 	};
 	(void)world->cast_shape(sp, translation, fn);
@@ -573,28 +573,28 @@ read_capsule_value(mrb_state *mrb, const mrb_value value)
 {
 	const auto state = euler::util::State::get(mrb);
 	if (!mrb_hash_p(value)) {
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Expected hash for capsule");
 	}
 
 	const mrb_value points
-	    = state->mrb()->hash_get(value, EULER_SYM_VAL(points));
+	    = state->rb().hash_get(value, EULER_SYM_VAL(points));
 	if (!mrb_array_p(points)) {
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Expected array for capsule points");
 	}
 	if (RARRAY_LEN(points) != 2) {
-		state->mrb()->raise(state->mrb()->argument_error(),
+		state->rb().raise(state->rb().argument_error(),
 		    "Expected array of length 2 for capsule points");
 	}
 	const b2Vec2 center1 = euler::physics::value_to_b2_vec(mrb,
-	    state->mrb()->ary_ref(points, 0));
+	    state->rb().ary_ref(points, 0));
 	const b2Vec2 center2 = euler::physics::value_to_b2_vec(mrb,
-	    state->mrb()->ary_ref(points, 1));
+	    state->rb().ary_ref(points, 1));
 	const mrb_value radius_value
-	    = state->mrb()->hash_get(value, EULER_SYM_VAL(radius));
+	    = state->rb().hash_get(value, EULER_SYM_VAL(radius));
 	if (!mrb_float_p(radius_value) && !mrb_integer_p(radius_value)) {
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Expected float for capsule radius");
 	}
 	const float radius = static_cast<float>(mrb_float(radius_value));
@@ -623,7 +623,7 @@ world_cast_mover(mrb_state *mrb, mrb_value self)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -634,13 +634,13 @@ world_cast_mover(mrb_state *mrb, mrb_value self)
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	state->mrb()->get_args("&:", &block, &kwargs);
+	state->rb().get_args("&:", &block, &kwargs);
 	const b2Capsule mover = read_capsule_value(mrb, kw_values[MOVER]);
 	const b2Vec2 translation
 	    = euler::physics::value_to_b2_vec(mrb, kw_values[TRANSLATION]);
 	const b2QueryFilter filter = b2DefaultQueryFilter();
 	const auto out = world->cast_mover(&mover, translation, filter);
-	return state->mrb()->float_value(out);
+	return state->rb().float_value(out);
 }
 
 static mrb_value
@@ -650,29 +650,29 @@ world_collide_mover(mrb_state *mrb, const mrb_value self)
 	const auto world = state->unwrap<World>(self);
 	mrb_value block = mrb_nil_value();
 	mrb_value mover_value = mrb_nil_value();
-	state->mrb()->get_args("H&", &mover_value, &block);
+	state->rb().get_args("H&", &mover_value, &block);
 	const b2Capsule mover = read_capsule_value(mrb, mover_value);
 	auto result = mrb_nil_value();
-	if (!mrb_nil_p(block)) result = state->mrb()->ary_new();
+	if (!mrb_nil_p(block)) result = state->rb().ary_new();
 	world->collide_mover(&mover, [&](auto shape, auto plane) {
 		if (mrb_nil_p(block)) {
-			state->mrb()->ary_push(result, state->wrap(shape));
+			state->rb().ary_push(result, state->wrap(shape));
 			return true;
 		}
-		const mrb_value plane_result = state->mrb()->hash_new_capa(3);
-		const mrb_value col_plane = state->mrb()->hash_new_capa(2);
-		state->mrb()->hash_set(col_plane, EULER_SYM_VAL(normal),
+		const mrb_value plane_result = state->rb().hash_new_capa(3);
+		const mrb_value col_plane = state->rb().hash_new_capa(2);
+		state->rb().hash_set(col_plane, EULER_SYM_VAL(normal),
 		    euler::physics::b2_vec_to_value(mrb, plane->plane.normal));
-		state->mrb()->hash_set(col_plane, EULER_SYM_VAL(offset),
-		    state->mrb()->float_value(plane->plane.offset));
-		state->mrb()->hash_set(plane_result, EULER_SYM_VAL(plane),
+		state->rb().hash_set(col_plane, EULER_SYM_VAL(offset),
+		    state->rb().float_value(plane->plane.offset));
+		state->rb().hash_set(plane_result, EULER_SYM_VAL(plane),
 		    col_plane);
-		state->mrb()->hash_set(plane_result, EULER_SYM_VAL(point),
+		state->rb().hash_set(plane_result, EULER_SYM_VAL(point),
 		    euler::physics::b2_vec_to_value(mrb, plane->point));
-		state->mrb()->hash_set(plane_result, EULER_SYM_VAL(hit),
+		state->rb().hash_set(plane_result, EULER_SYM_VAL(hit),
 		    mrb_bool_value(plane->hit));
 		// mrb_value args[2] = { state->wrap(shape), plane_result };
-		auto ans = state->mrb()->call(block, state->wrap(shape),
+		auto ans = state->rb().call(block, state->wrap(shape),
 		    plane_result);
 		return mrb_true_p(ans);
 	});
@@ -685,7 +685,7 @@ world_enable_sleeping(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_bool value;
-	state->mrb()->get_args("b", &value);
+	state->rb().get_args("b", &value);
 	world->enable_sleeping(value);
 	return mrb_nil_value();
 }
@@ -705,7 +705,7 @@ world_enable_continuous(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_bool value;
-	state->mrb()->get_args("b", &value);
+	state->rb().get_args("b", &value);
 	world->enable_continuous(value);
 	return mrb_nil_value();
 }
@@ -725,7 +725,7 @@ world_set_restitution_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	world->set_restitution_threshold(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -736,7 +736,7 @@ world_restitution_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	const float threshold = world->restitution_threshold();
-	return state->mrb()->float_value(threshold);
+	return state->rb().float_value(threshold);
 }
 
 static mrb_value
@@ -745,7 +745,7 @@ world_set_hit_event_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	world->set_hit_event_threshold(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -756,7 +756,7 @@ world_hit_event_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	const float threshold = world->hit_event_threshold();
-	return state->mrb()->float_value(threshold);
+	return state->rb().float_value(threshold);
 }
 
 static mrb_value
@@ -765,7 +765,7 @@ world_set_custom_filter(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_value block;
-	state->mrb()->get_args("&!", &block);
+	state->rb().get_args("&!", &block);
 	world->set_custom_filter(mrb, block);
 	return mrb_nil_value();
 }
@@ -776,7 +776,7 @@ world_on_pre_solve(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_value block;
-	state->mrb()->get_args("&!", &block);
+	state->rb().get_args("&!", &block);
 	world->set_pre_solve(mrb, block);
 	return mrb_nil_value();
 }
@@ -787,7 +787,7 @@ world_set_gravity(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_value value;
-	state->mrb()->get_args("H", &value);
+	state->rb().get_args("H", &value);
 	const b2Vec2 gravity = euler::physics::value_to_b2_vec(mrb, value);
 	world->set_gravity(gravity);
 	return mrb_nil_value();
@@ -823,7 +823,7 @@ world_explode(mrb_state *mrb, mrb_value self)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -834,7 +834,7 @@ world_explode(mrb_state *mrb, mrb_value self)
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	state->mrb()->get_args(":", &kwargs);
+	state->rb().get_args(":", &kwargs);
 	b2ExplosionDef def = b2DefaultExplosionDef();
 	if (!mrb_undef_p(kw_values[POSITION])) {
 		def.position
@@ -858,7 +858,7 @@ world_set_contact_tuning(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_value hash;
-	state->mrb()->get_args("H", &hash);
+	state->rb().get_args("H", &hash);
 	float hertz = 0.0f;
 	float damping_ratio = 0.0f;
 	float push_speed = 0.0f;
@@ -868,14 +868,14 @@ world_set_contact_tuning(mrb_state *mrb, mrb_value self)
 		std::pair(EULER_SYM_VAL(push_speed), &push_speed),
 	};
 	for (const auto &key : keys) {
-		if (!state->mrb()->hash_key_p(hash, key.first)) {
+		if (!state->rb().hash_key_p(hash, key.first)) {
 			const auto sym = mrb_symbol(key.first);
-			const char *key_name = state->mrb()->sym_name(sym);
-			state->mrb()->raisef(state->mrb()->argument_error(),
+			const char *key_name = state->rb().sym_name(sym);
+			state->rb().raisef(state->rb().argument_error(),
 			    "Missing required key %s in contact_tuning hash",
 			    key_name);
 		}
-		const auto value = state->mrb()->hash_get(hash, key.first);
+		const auto value = state->rb().hash_get(hash, key.first);
 		*(key.second) = static_cast<float>(mrb_float(value));
 	}
 	world->set_contact_tuning(hertz, damping_ratio, push_speed);
@@ -888,7 +888,7 @@ world_set_maximum_linear_speed(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	world->set_maximum_linear_speed(static_cast<float>(value));
 	return mrb_nil_value();
 }
@@ -899,7 +899,7 @@ world_maximum_linear_speed(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	const float speed = world->maximum_linear_speed();
-	return state->mrb()->float_value(speed);
+	return state->rb().float_value(speed);
 }
 
 static mrb_value
@@ -908,7 +908,7 @@ world_awake_body_count(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto world = state->unwrap<World>(self);
 	const int count = world->awake_body_count();
-	return state->mrb()->int_value(count);
+	return state->rb().int_value(count);
 }
 
 static b2MotionLocks
@@ -916,23 +916,23 @@ read_motion_locks_args(mrb_state *mrb, mrb_value locks_value)
 {
 	const auto state = euler::util::State::get(mrb);
 	if (!mrb_array_p(locks_value)) {
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Expected array of locked directions for "
 		    "motion_locks");
 	}
 	bool x = false, y = false, z = false;
 	for (mrb_int i = 0; i < RARRAY_LEN(locks_value); ++i) {
-		const mrb_value a = state->mrb()->ary_ref(locks_value, i);
+		const mrb_value a = state->rb().ary_ref(locks_value, i);
 		if (!mrb_symbol_p(a)) {
-			state->mrb()->raise(state->mrb()->type_error(),
+			state->rb().raise(state->rb().type_error(),
 			    "Expected symbols in motion_locks array");
 		}
-		if (state->mrb()->equal(a, EULER_SYM_VAL(linear_x))) x = true;
-		if (state->mrb()->equal(a, EULER_SYM_VAL(x))) x = true;
-		if (state->mrb()->equal(a, EULER_SYM_VAL(linear_y))) y = true;
-		if (state->mrb()->equal(a, EULER_SYM_VAL(y))) y = true;
-		if (state->mrb()->equal(a, EULER_SYM_VAL(angular_z))) z = true;
-		if (state->mrb()->equal(a, EULER_SYM_VAL(z))) z = true;
+		if (state->rb().equal(a, EULER_SYM_VAL(linear_x))) x = true;
+		if (state->rb().equal(a, EULER_SYM_VAL(x))) x = true;
+		if (state->rb().equal(a, EULER_SYM_VAL(linear_y))) y = true;
+		if (state->rb().equal(a, EULER_SYM_VAL(y))) y = true;
+		if (state->rb().equal(a, EULER_SYM_VAL(angular_z))) z = true;
+		if (state->rb().equal(a, EULER_SYM_VAL(z))) z = true;
 	}
 	return b2MotionLocks {
 		.linearX = x,
@@ -984,7 +984,7 @@ world_create_body(mrb_state *mrb, mrb_value self)
 	mrb_sym kw_syms[KW_COUNT];
 	for (size_t i = 0; i < KW_COUNT; ++i) {
 		const size_t len = strlen(KW_NAMES[i]);
-		kw_syms[i] = state->mrb()->intern_static(KW_NAMES[i], len);
+		kw_syms[i] = state->rb().intern_static(KW_NAMES[i], len);
 	}
 	mrb_value kw_values[KW_COUNT];
 	euler::physics::init_kw_values(kw_values);
@@ -995,7 +995,7 @@ world_create_body(mrb_state *mrb, mrb_value self)
 		.values = kw_values,
 		.rest = nullptr,
 	};
-	state->mrb()->get_args(":", &kwargs);
+	state->rb().get_args(":", &kwargs);
 	b2BodyDef def = b2DefaultBodyDef();
 	if (!mrb_nil_p(kw_values[TYPE])) {
 		def.type
@@ -1062,79 +1062,79 @@ box2d_world_init(mrb_state *mrb, RClass *mod)
 {
 	const auto state = euler::util::State::get(mrb);
 	RClass *world
-	    = state->mrb()->define_class_under(mod, "World", mrb->object_class);
+	    = state->rb().define_class_under(mod, "World", mrb->object_class);
 	MRB_SET_INSTANCE_TT(world, MRB_TT_DATA);
-	state->mrb()->define_class_method(world, "allocate", world_allocate,
+	state->rb().define_class_method(world, "allocate", world_allocate,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "initialize", world_initialize,
+	state->rb().define_method(world, "initialize", world_initialize,
 	    MRB_ARGS_NONE() | MRB_ARGS_KEY(0, 0));
-	state->mrb()->define_method(world, "valid?", world_is_valid,
+	state->rb().define_method(world, "valid?", world_is_valid,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "step", world_step,
+	state->rb().define_method(world, "step", world_step,
 	    MRB_ARGS_KEY(2, 0));
-	state->mrb()->define_method(world, "body_events", world_body_events,
+	state->rb().define_method(world, "body_events", world_body_events,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "sensor_events", world_sensor_events,
+	state->rb().define_method(world, "sensor_events", world_sensor_events,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "contact_events",
+	state->rb().define_method(world, "contact_events",
 	    world_contact_events, MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "joint_events", world_joint_events,
+	state->rb().define_method(world, "joint_events", world_joint_events,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "overlap_aabb", world_overlap_aabb,
+	state->rb().define_method(world, "overlap_aabb", world_overlap_aabb,
 	    MRB_ARGS_KEY(2, 0));
-	state->mrb()->define_method(world, "overlap_shape", world_overlap_shape,
+	state->rb().define_method(world, "overlap_shape", world_overlap_shape,
 	    MRB_ARGS_KEY(2, 0));
-	state->mrb()->define_method(world, "cast_ray", world_cast_ray,
+	state->rb().define_method(world, "cast_ray", world_cast_ray,
 	    MRB_ARGS_KEY(2, 0));
-	state->mrb()->define_method(world, "cast_ray_closest",
+	state->rb().define_method(world, "cast_ray_closest",
 	    world_cast_ray_closest, MRB_ARGS_KEY(2, 0));
-	state->mrb()->define_method(world, "cast_shape", world_cast_shape,
+	state->rb().define_method(world, "cast_shape", world_cast_shape,
 	    MRB_ARGS_KEY(2, 0));
-	state->mrb()->define_method(world, "cast_mover", world_cast_mover,
+	state->rb().define_method(world, "cast_mover", world_cast_mover,
 	    MRB_ARGS_KEY(2, 0));
-	state->mrb()->define_method(world, "collide_mover", world_collide_mover,
+	state->rb().define_method(world, "collide_mover", world_collide_mover,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world, "enable_sleeping",
+	state->rb().define_method(world, "enable_sleeping",
 	    world_enable_sleeping, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world, "sleeping_enabled?",
+	state->rb().define_method(world, "sleeping_enabled?",
 	    world_is_sleeping_enabled, MRB_ARGS_NONE());
-	state->mrb()->define_method(world,
+	state->rb().define_method(world,
 	    "continuous_enabled=", world_enable_continuous, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world, "continuous_enabled",
+	state->rb().define_method(world, "continuous_enabled",
 	    world_is_continuous_enabled, MRB_ARGS_NONE());
-	state->mrb()->alias_method(world,
-	    state->mrb()->intern_cstr("enable_continuous"),
-	    state->mrb()->intern_cstr("continuous_enabled="));
-	state->mrb()->define_method(world,
+	state->rb().alias_method(world,
+	    state->rb().intern_cstr("enable_continuous"),
+	    state->rb().intern_cstr("continuous_enabled="));
+	state->rb().define_method(world,
 	    "restitution_threshold=", world_set_restitution_threshold,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world, "restitution_threshold",
+	state->rb().define_method(world, "restitution_threshold",
 	    world_restitution_threshold, MRB_ARGS_NONE());
-	state->mrb()->define_method(world,
+	state->rb().define_method(world,
 	    "hit_event_threshold=", world_set_hit_event_threshold,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world, "hit_event_threshold",
+	state->rb().define_method(world, "hit_event_threshold",
 	    world_hit_event_threshold, MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "on_custom_filter",
+	state->rb().define_method(world, "on_custom_filter",
 	    world_set_custom_filter, MRB_ARGS_BLOCK());
-	state->mrb()->define_method(world, "on_pre_solve", world_on_pre_solve,
+	state->rb().define_method(world, "on_pre_solve", world_on_pre_solve,
 	    MRB_ARGS_BLOCK());
-	state->mrb()->define_method(world, "gravity=", world_set_gravity,
+	state->rb().define_method(world, "gravity=", world_set_gravity,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world, "gravity", world_gravity,
+	state->rb().define_method(world, "gravity", world_gravity,
 	    MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "explode", world_explode,
+	state->rb().define_method(world, "explode", world_explode,
 	    MRB_ARGS_KEY(4, 0));
-	state->mrb()->define_method(world,
+	state->rb().define_method(world,
 	    "contact_tuning=", world_set_contact_tuning, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world,
+	state->rb().define_method(world,
 	    "maximum_linear_speed=", world_set_maximum_linear_speed,
 	    MRB_ARGS_REQ(1));
-	state->mrb()->define_method(world, "maximum_linear_speed",
+	state->rb().define_method(world, "maximum_linear_speed",
 	    world_maximum_linear_speed, MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "awake_body_count",
+	state->rb().define_method(world, "awake_body_count",
 	    world_awake_body_count, MRB_ARGS_NONE());
-	state->mrb()->define_method(world, "create_body", world_create_body,
+	state->rb().define_method(world, "create_body", world_create_body,
 	    MRB_ARGS_KEY(15, 0));
 	return world;
 }
@@ -1142,7 +1142,7 @@ box2d_world_init(mrb_state *mrb, RClass *mod)
 RClass *
 World::init(const util::Reference<util::State> &state, RClass *mod, RClass *)
 {
-	return box2d_world_init(state->mrb()->mrb(), mod);
+	return box2d_world_init(state->rb().mrb(), mod);
 }
 
 mrb_value
@@ -1477,8 +1477,8 @@ World::set_custom_filter(mrb_state *mrb, mrb_value block)
 {
 	const auto state = util::State::get(mrb);
 	if (!mrb_nil_p(_custom_filter_block))
-		state->mrb()->gc_unregister(_custom_filter_block);
-	if (!mrb_nil_p(block)) state->mrb()->gc_register(block);
+		state->rb().gc_unregister(_custom_filter_block);
+	if (!mrb_nil_p(block)) state->rb().gc_register(block);
 	_custom_filter_block = block;
 }
 void
@@ -1486,8 +1486,8 @@ World::set_pre_solve(mrb_state *mrb, mrb_value block)
 {
 	const auto state = util::State::get(mrb);
 	if (!mrb_nil_p(_pre_solve_block))
-		state->mrb()->gc_unregister(_pre_solve_block);
-	if (!mrb_nil_p(block)) state->mrb()->gc_register(block);
+		state->rb().gc_unregister(_pre_solve_block);
+	if (!mrb_nil_p(block)) state->rb().gc_register(block);
 	_pre_solve_block = block;
 }
 euler::util::Reference<euler::util::State>

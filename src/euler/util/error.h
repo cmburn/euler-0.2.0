@@ -16,19 +16,19 @@ class RubyState;
 class Error : public std::exception {
 public:
 	~Error() override;
-	// Error(const Reference<RubyState> &state, const std::string &message);
+	// Error(RubyState &state, const std::string &message);
 	// template <typename... Args>
-	// Error(const Reference<RubyState> &state, std::format_args fmt,
+	// Error(RubyState &state, std::format_args fmt,
 	//     Args... args)
 	//     : Error(state, std::format(fmt, args...))
 	// {
 	// }
-	// Error(const Reference<RubyState> &state, RObject *exc);
+	// Error(RubyState &state, RObject *exc);
 
-	Error(const Reference<RubyState> &state, const std::string &cause,
+	Error(RubyState &state, const std::string &cause,
 	    const char *class_name = nullptr,
 	    const std::optional<std::string_view> &backtrace = std::nullopt);
-	Error(const Reference<RubyState> &state, RObject *exc);
+	Error(RubyState &state, RObject *exc);
 
 	enum class Kind {
 		Exception,
@@ -54,7 +54,7 @@ public:
 	// attempts to determine the most specific exception type for the given
 	// exception object, and returns it. If the type is not a known type,
 	// throws std::invalid_argument.
-	// static Kind underlying_type(const Reference<RubyState> &state,
+	// static Kind underlying_type(RubyState &state,
 	//     RObject *exc);
 
 	struct TypeInfo {
@@ -80,10 +80,11 @@ public:
 		return false;
 	}
 
-	[[nodiscard]] Reference<RubyState> state() const;
+	// [[nodiscard]] const RubyState &state() const;
+	RubyState &state() const;
 
 private:
-	Reference<RubyState> _state;
+	RubyState &_state;
 
 protected:
 	std::string _cause;
@@ -95,12 +96,12 @@ private:
 
 class StandardError : public Error {
 public:
-	StandardError(const Reference<RubyState> &state,
+	StandardError(RubyState &state,
 	    const std::string &message)
 	    : Error(state, message)
 	{
 	}
-	StandardError(const Reference<RubyState> &state, RObject *exc)
+	StandardError(RubyState &state, RObject *exc)
 	    : Error(state, exc)
 	{
 	}
@@ -115,12 +116,12 @@ public:
 
 class RuntimeError : public StandardError {
 public:
-	RuntimeError(const Reference<RubyState> &state,
+	RuntimeError(RubyState &state,
 	    const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	RuntimeError(const Reference<RubyState> &state, RObject *exc)
+	RuntimeError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -135,11 +136,11 @@ public:
 
 class TypeError : public Error {
 public:
-	TypeError(const Reference<RubyState> &state, const std::string &message)
+	TypeError(RubyState &state, const std::string &message)
 	    : Error(state, message)
 	{
 	}
-	TypeError(const Reference<RubyState> &state, RObject *exc)
+	TypeError(RubyState &state, RObject *exc)
 	    : Error(state, exc)
 	{
 	}
@@ -154,12 +155,12 @@ public:
 
 class ZeroDivisionError : public StandardError {
 public:
-	ZeroDivisionError(const Reference<RubyState> &state,
+	ZeroDivisionError(RubyState &state,
 	    const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	ZeroDivisionError(const Reference<RubyState> &state, RObject *exc)
+	ZeroDivisionError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -174,12 +175,12 @@ public:
 
 class ArgumentError : public StandardError {
 public:
-	ArgumentError(const Reference<RubyState> &state,
+	ArgumentError(RubyState &state,
 	    const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	ArgumentError(const Reference<RubyState> &state, RObject *exc)
+	ArgumentError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -193,12 +194,12 @@ public:
 
 class IndexError : public StandardError {
 public:
-	IndexError(const Reference<RubyState> &state,
+	IndexError(RubyState &state,
 	    const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	IndexError(const Reference<RubyState> &state, RObject *exc)
+	IndexError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -213,12 +214,12 @@ public:
 
 class RangeError : public StandardError {
 public:
-	RangeError(const Reference<RubyState> &state,
+	RangeError(RubyState &state,
 	    const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	RangeError(const Reference<RubyState> &state, RObject *exc)
+	RangeError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -233,11 +234,11 @@ public:
 
 class NameError : public StandardError {
 public:
-	NameError(const Reference<RubyState> &state, const std::string &message)
+	NameError(RubyState &state, const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	NameError(const Reference<RubyState> &state, RObject *exc)
+	NameError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -252,12 +253,12 @@ public:
 
 class NoMethodError : public NameError {
 public:
-	NoMethodError(const Reference<RubyState> &state,
+	NoMethodError(RubyState &state,
 	    const std::string &message)
 	    : NameError(state, message)
 	{
 	}
-	NoMethodError(const Reference<RubyState> &state, RObject *exc)
+	NoMethodError(RubyState &state, RObject *exc)
 	    : NameError(state, exc)
 	{
 	}
@@ -272,12 +273,12 @@ public:
 
 class ScriptError : public Error {
 public:
-	ScriptError(const Reference<RubyState> &state,
+	ScriptError(RubyState &state,
 	    const std::string &message)
 	    : Error(state, message)
 	{
 	}
-	ScriptError(const Reference<RubyState> &state, RObject *exc)
+	ScriptError(RubyState &state, RObject *exc)
 	    : Error(state, exc)
 	{
 	}
@@ -292,12 +293,12 @@ public:
 
 class SyntaxError : public ScriptError {
 public:
-	SyntaxError(const Reference<RubyState> &state,
+	SyntaxError(RubyState &state,
 	    const std::string &message)
 	    : ScriptError(state, message)
 	{
 	}
-	SyntaxError(const Reference<RubyState> &state, RObject *exc)
+	SyntaxError(RubyState &state, RObject *exc)
 	    : ScriptError(state, exc)
 	{
 	}
@@ -312,12 +313,12 @@ public:
 
 class LocalJumpError : public StandardError {
 public:
-	LocalJumpError(const Reference<RubyState> &state,
+	LocalJumpError(RubyState &state,
 	    const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	LocalJumpError(const Reference<RubyState> &state, RObject *exc)
+	LocalJumpError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -332,12 +333,12 @@ public:
 
 class RegexpError : public StandardError {
 public:
-	RegexpError(const Reference<RubyState> &state,
+	RegexpError(RubyState &state,
 	    const std::string &message)
 	    : StandardError(state, message)
 	{
 	}
-	RegexpError(const Reference<RubyState> &state, RObject *exc)
+	RegexpError(RubyState &state, RObject *exc)
 	    : StandardError(state, exc)
 	{
 	}
@@ -352,12 +353,12 @@ public:
 
 class FrozenError : public RuntimeError {
 public:
-	FrozenError(const Reference<RubyState> &state,
+	FrozenError(RubyState &state,
 	    const std::string &message)
 	    : RuntimeError(state, message)
 	{
 	}
-	FrozenError(const Reference<RubyState> &state, RObject *exc)
+	FrozenError(RubyState &state, RObject *exc)
 	    : RuntimeError(state, exc)
 	{
 	}
@@ -372,12 +373,12 @@ public:
 
 class NotImplementedError : public ScriptError {
 public:
-	NotImplementedError(const Reference<RubyState> &state,
+	NotImplementedError(RubyState &state,
 	    const std::string &message)
 	    : ScriptError(state, message)
 	{
 	}
-	NotImplementedError(const Reference<RubyState> &state, RObject *exc)
+	NotImplementedError(RubyState &state, RObject *exc)
 	    : ScriptError(state, exc)
 	{
 	}
@@ -392,11 +393,11 @@ public:
 
 class KeyError : public IndexError {
 public:
-	KeyError(const Reference<RubyState> &state, const std::string &message)
+	KeyError(RubyState &state, const std::string &message)
 	    : IndexError(state, message)
 	{
 	}
-	KeyError(const Reference<RubyState> &state, RObject *exc)
+	KeyError(RubyState &state, RObject *exc)
 	    : IndexError(state, exc)
 	{
 	}
@@ -411,12 +412,12 @@ public:
 
 class FloatDomainError : public RangeError {
 public:
-	FloatDomainError(const Reference<RubyState> &state,
+	FloatDomainError(RubyState &state,
 	    const std::string &message)
 	    : RangeError(state, message)
 	{
 	}
-	FloatDomainError(const Reference<RubyState> &state, RObject *exc)
+	FloatDomainError(RubyState &state, RObject *exc)
 	    : RangeError(state, exc)
 	{
 	}
@@ -430,15 +431,15 @@ public:
 };
 /* ReSharper restore CppClassCanBeFinal */
 
-std::string error_cause(const Reference<RubyState> &state, RObject *exc);
-std::string error_backtrace(const Reference<RubyState> &state, RObject *exc);
+std::string error_cause(RubyState &state, RObject *exc);
+std::string error_backtrace(RubyState &state, RObject *exc);
 
 template <typename T>
 concept ErrorType = std::derived_from<T, Error>;
 
 template <ErrorType T = Error> class CustomError : public T {
 public:
-	CustomError(const Reference<RubyState> &state, RObject *exc)
+	CustomError(RubyState &state, RObject *exc)
 	    : T(state, exc)
 	    , _exc(exc)
 	{
@@ -457,14 +458,14 @@ public:
 	[[nodiscard]] RClass *
 	exception_class() const override
 	{
-		return this->state()->obj_class(mrb_obj_value(_exc));
+		return this->state().obj_class(mrb_obj_value(_exc));
 	}
 
 	[[nodiscard]] const char *
 	what() const noexcept override
 	{
-		const auto str = this->state()->any_to_s(mrb_obj_value(_exc));
-		return this->state()->string_cstr(str);
+		const auto str = this->state().any_to_s(mrb_obj_value(_exc));
+		return this->state().string_cstr(str);
 	}
 
 private:
@@ -473,14 +474,14 @@ private:
 
 template <typename T, typename... Args>
 inline auto
-make_error(const Reference<RubyState> &state,
+make_error(RubyState &state,
     const std::format_string<Args...> &fmt, Args &&...args)
 {
 	auto message = std::format(fmt, std::forward<Args>(args)...);
 	return T(state, message);
 }
 
-[[noreturn]] void throw_error(const Reference<RubyState> &state, RObject *exc);
+[[noreturn]] void throw_error(RubyState &state, RObject *exc);
 
 } /* namespace euler::util */
 

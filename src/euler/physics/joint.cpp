@@ -40,7 +40,7 @@ joint_type(mrb_state *mrb, mrb_value self)
 	case b2_weldJoint: return EULER_SYM_VAL(weld);
 	case b2_wheelJoint: return EULER_SYM_VAL(wheel);
 	default:
-		state->mrb()->raise(state->mrb()->type_error(),
+		state->rb().raise(state->rb().type_error(),
 		    "Unknown joint type");
 		std::unreachable();
 	}
@@ -85,7 +85,7 @@ joint_set_local_frame_a(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	mrb_value value;
-	state->mrb()->get_args("H", &value);
+	state->rb().get_args("H", &value);
 	const b2Transform local_frame_a
 	    = euler::physics::value_to_b2_transform(mrb, value);
 	b2Joint_SetLocalFrameA(joint->id(), local_frame_a);
@@ -98,7 +98,7 @@ joint_set_local_frame_b(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	mrb_value value;
-	state->mrb()->get_args("H", &value);
+	state->rb().get_args("H", &value);
 	const b2Transform local_frame_b
 	    = euler::physics::value_to_b2_transform(mrb, value);
 	b2Joint_SetLocalFrameB(joint->id(), local_frame_b);
@@ -129,7 +129,7 @@ joint_set_collide_connected(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	mrb_bool flag;
-	state->mrb()->get_args("b", &flag);
+	state->rb().get_args("b", &flag);
 	b2Joint_SetCollideConnected(joint->id(), flag);
 	return mrb_nil_value();
 }
@@ -167,7 +167,7 @@ joint_linear_separation(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	const float separation = b2Joint_GetLinearSeparation(joint->id());
-	return state->mrb()->float_value(separation);
+	return state->rb().float_value(separation);
 }
 
 static mrb_value
@@ -176,7 +176,7 @@ joint_angular_separation(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	const float separation = b2Joint_GetAngularSeparation(joint->id());
-	return state->mrb()->float_value(separation);
+	return state->rb().float_value(separation);
 }
 
 static mrb_value
@@ -186,10 +186,10 @@ joint_set_constraint_tuning(mrb_state *mrb, mrb_value self)
 	const auto joint = state->unwrap<Joint>(self);
 	/* should be a hash with keys `hertz` and `damping_ratio` */
 	mrb_value tuning_value;
-	state->mrb()->get_args("H", &tuning_value);
+	state->rb().get_args("H", &tuning_value);
 	const mrb_value hertz_value
-	    = state->mrb()->hash_get(tuning_value, EULER_SYM_VAL(hertz));
-	const mrb_value damping_ratio_value = state->mrb()->hash_get(
+	    = state->rb().hash_get(tuning_value, EULER_SYM_VAL(hertz));
+	const mrb_value damping_ratio_value = state->rb().hash_get(
 	    tuning_value, EULER_SYM_VAL(damping_ratio));
 	const float hertz = (float)mrb_float(hertz_value);
 	const float damping_ratio = (float)mrb_float(damping_ratio_value);
@@ -205,11 +205,11 @@ joint_constraint_tuning(mrb_state *mrb, mrb_value self)
 	float hertz = 0.0f;
 	float damping_ratio = 0.0f;
 	b2Joint_GetConstraintTuning(joint->id(), &hertz, &damping_ratio);
-	const mrb_value out = state->mrb()->hash_new_capa(2);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(hertz),
-	    state->mrb()->float_value(hertz));
-	state->mrb()->hash_set(out, EULER_SYM_VAL(damping_ratio),
-	    state->mrb()->float_value(damping_ratio));
+	const mrb_value out = state->rb().hash_new_capa(2);
+	state->rb().hash_set(out, EULER_SYM_VAL(hertz),
+	    state->rb().float_value(hertz));
+	state->rb().hash_set(out, EULER_SYM_VAL(damping_ratio),
+	    state->rb().float_value(damping_ratio));
 	return out;
 }
 
@@ -219,7 +219,7 @@ joint_set_force_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	b2Joint_SetForceThreshold(joint->id(), (float)value);
 	return mrb_nil_value();
 }
@@ -230,7 +230,7 @@ joint_force_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	const float threshold = b2Joint_GetForceThreshold(joint->id());
-	return state->mrb()->float_value(threshold);
+	return state->rb().float_value(threshold);
 }
 
 static mrb_value
@@ -239,7 +239,7 @@ joint_set_torque_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	mrb_float value;
-	state->mrb()->get_args("f", &value);
+	state->rb().get_args("f", &value);
 	b2Joint_SetTorqueThreshold(joint->id(), (float)value);
 	return mrb_nil_value();
 }
@@ -250,7 +250,7 @@ joint_torque_threshold(mrb_state *mrb, mrb_value self)
 	const auto state = euler::util::State::get(mrb);
 	const auto joint = state->unwrap<Joint>(self);
 	const float threshold = b2Joint_GetTorqueThreshold(joint->id());
-	return state->mrb()->float_value(threshold);
+	return state->rb().float_value(threshold);
 }
 
 RClass *
@@ -258,46 +258,46 @@ box2d_joint_init(mrb_state *mrb, RClass *mod)
 {
 	const auto state = euler::util::State::get(mrb);
 	RClass *joint
-	    = state->mrb()->define_class_under(mod, "Joint", mrb->object_class);
+	    = state->rb().define_class_under(mod, "Joint", mrb->object_class);
 	MRB_SET_INSTANCE_TT(joint, MRB_TT_DATA);
-	state->mrb()->define_method(joint, "type", joint_type, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "body_a", joint_body_a,
+	state->rb().define_method(joint, "type", joint_type, MRB_ARGS_REQ(0));
+	state->rb().define_method(joint, "body_a", joint_body_a,
 	    MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "body_b", joint_body_b,
+	state->rb().define_method(joint, "body_b", joint_body_b,
 	    MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "world", joint_world,
+	state->rb().define_method(joint, "world", joint_world,
 	    MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "local_frame_a=", joint_set_local_frame_a, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "local_frame_b=", joint_set_local_frame_b, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "local_frame_a", joint_local_frame_a,
+	state->rb().define_method(joint, "local_frame_a", joint_local_frame_a,
 	    MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "local_frame_b", joint_local_frame_b,
+	state->rb().define_method(joint, "local_frame_b", joint_local_frame_b,
 	    MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "collide_connected=", joint_set_collide_connected, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "collide_connected",
+	state->rb().define_method(joint, "collide_connected",
 	    joint_collide_connected, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "wake_bodies", joint_wake_bodies,
+	state->rb().define_method(joint, "wake_bodies", joint_wake_bodies,
 	    MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "constraint_force",
+	state->rb().define_method(joint, "constraint_force",
 	    joint_constraint_force, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "linear_separation",
+	state->rb().define_method(joint, "linear_separation",
 	    joint_linear_separation, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint, "angular_separation",
+	state->rb().define_method(joint, "angular_separation",
 	    joint_angular_separation, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "constraint_tuning=", joint_set_constraint_tuning, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "constraint_tuning",
+	state->rb().define_method(joint, "constraint_tuning",
 	    joint_constraint_tuning, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "force_threshold=", joint_set_force_threshold, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "force_threshold",
+	state->rb().define_method(joint, "force_threshold",
 	    joint_force_threshold, MRB_ARGS_REQ(0));
-	state->mrb()->define_method(joint,
+	state->rb().define_method(joint,
 	    "torque_threshold=", joint_set_torque_threshold, MRB_ARGS_REQ(1));
-	state->mrb()->define_method(joint, "torque_threshold",
+	state->rb().define_method(joint, "torque_threshold",
 	    joint_torque_threshold, MRB_ARGS_REQ(0));
 	return joint;
 }
@@ -306,15 +306,15 @@ RClass *
 Joint::init(const euler::util::Reference<euler::util::State> &state,
     RClass *mod, RClass *)
 {
-	return box2d_joint_init(state->mrb()->mrb(), mod);
+	return box2d_joint_init(state->rb().mrb(), mod);
 }
 
 mrb_value
 Joint::Event::wrap(mrb_state *mrb) const
 {
 	auto state = euler::util::State::get(mrb);
-	mrb_value out = state->mrb()->hash_new_capa(1);
-	state->mrb()->hash_set(out, EULER_SYM_VAL(joint), joint->wrap(state));
+	mrb_value out = state->rb().hash_new_capa(1);
+	state->rb().hash_set(out, EULER_SYM_VAL(joint), joint->wrap(state));
 	return out;
 }
 
@@ -343,9 +343,9 @@ Joint::Events::wrap(mrb_state *mrb) const
 {
 	const auto state = euler::util::State::get(mrb);
 	const auto count = static_cast<mrb_int>(events.size());
-	const auto ary = state->mrb()->ary_new_capa(count);
+	const auto ary = state->rb().ary_new_capa(count);
 	for (const auto &event : events)
-		state->mrb()->ary_push(ary, event.wrap(mrb));
+		state->rb().ary_push(ary, event.wrap(mrb));
 	return ary;
 }
 
